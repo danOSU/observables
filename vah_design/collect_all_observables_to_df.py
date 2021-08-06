@@ -32,32 +32,32 @@ obs_cent_list = {
 float_t = '<f8'
 number_of_models_per_run = 4
 
-sdtype = [('Pb-Pb-5020',
+sdtype = [('Pb-Pb-2760',
               [(obs, [("mean", float_t, len(cent_list)),
                       ("err", float_t, len(cent_list))]) \
-                for obs, cent_list in obs_cent_list['Pb-Pb-5020'].items()],
+                for obs, cent_list in obs_cent_list['Pb-Pb-2760'].items()],
            number_of_models_per_run)]
 
 
 df_mean = {}
 df_sd = {}
 for i in range(0,150):
-    result_data = np.fromfile(f"~/vah_run_events/ozge_events/{i}/obs_Pb-Pb-2760.dat", dtype = sdtype)
+    result_data = np.fromfile(f"/home/ac.liyanage/vah_run_events/ozge_events/{i}/obs_Pb-Pb-2760.dat", dtype = sdtype)
     for obs, cent_list in obs_cent_list['Pb-Pb-2760'].items():
         for i,cen in enumerate(cent_list):
-            mean=MAP_data1["Pb-Pb-2760"][obs]["mean"][0][0][i]
-            sd=MAP_data1["Pb-Pb-2760"][obs]["err"][0][0][i]
+            mean=result_data["Pb-Pb-2760"][obs]["mean"][0][0][i]
+            sd=result_data["Pb-Pb-2760"][obs]["err"][0][0][i]
 
 
             obs_name=obs+'_'+str(cen)
-            print(f"for {obs_name} value is {mean}")
-
+            print(f"for {obs_name} mean is {mean}")
+            print(f"for {obs_name} sd is {sd}")
             if obs_name in df_mean:
                 df_mean[obs_name].append(mean)
                 df_sd[obs_name].append(sd)
             else:
-                df_mean[obs_name] = mean
-                df_sd[obs_name] = sd
+                df_mean[obs_name] = [mean]
+                df_sd[obs_name] = [sd]
 
 df1 = pd.DataFrame(data=df_mean, index=np.arange(150))
 df2 = pd.DataFrame(data=df_sd, index=np.arange(150))
