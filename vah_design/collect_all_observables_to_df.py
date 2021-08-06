@@ -63,4 +63,4 @@ df1 = pd.DataFrame(data=df_mean, index=np.arange(150))
 df2 = pd.DataFrame(data=df_sd, index=np.arange(150))
 
 df1.to_csv("mean_for_ozge_150design")
-df1.to_csv("sd_for_ozge_150design")
+df2.to_csv("sd_for_ozge_150design")
