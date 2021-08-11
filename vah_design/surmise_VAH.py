@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 from surmise.emulation import emulator
 from surmise.calibration import calibrator
 
+import pyximport
+pyximport.install(setup_args={"include_dirs":np.get_include()},
+                  reload_support=True)
+
 df_mean = pd.read_csv('mean_for_ozge_150design')
 df_sd = pd.read_csv('sd_for_ozge_150design')
 
@@ -81,3 +85,16 @@ pred_test_mean = pred_test.mean()
 # Check error
 print('SSE=', np.sqrt(np.sum((pred_test_mean - f_test)**2)))
 
+# Observe test prediction
+fig = plt.figure()
+plt.scatter(f_test, pred_test_mean, alpha=0.5)
+plt.xlabel('Simulator outcome (test)')
+plt.ylabel('Emulator prediction (test)')
+plt.show()
+
+pred_test_var = pred_test.var()
+fig, axs = plt.subplots(1, 2, sharey=True, tight_layout=True)
+axs[0].hist((pred_test_mean-f_test).flatten())
+# This should look like a standard normal
+axs[1].hist(((pred_test_mean-f_test)/np.sqrt(pred_test_var)).flatten())
+plt.show()
