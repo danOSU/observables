@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from surmise.emulation import emulator
 from surmise.calibration import calibrator
+import scipy.stats as sps
 
 import pyximport
 pyximport.install(setup_args={"include_dirs":np.get_include()},
@@ -98,3 +99,70 @@ axs[0].hist((pred_test_mean-f_test).flatten())
 # This should look like a standard normal
 axs[1].hist(((pred_test_mean-f_test)/np.sqrt(pred_test_var)).flatten())
 plt.show()
+
+# Run calibrator for each column of the figure
+
+# Define prior for parameters
+
+class prior_VAH:
+    def lpdf(theta):
+        return (sps.uniform.logpdf(theta[:, 0], 10, 20) +  # Pb_Pb
+                              sps.uniform.logpdf(theta[:, 1], -0.7, 1.4) + # Mean
+                              sps.uniform.logpdf(theta[:, 2], 0.5, 1) + # Width
+                              sps.uniform.logpdf(theta[:, 3], 0, 1.7**3) + # Dist
+                              sps.uniform.logpdf(theta[:, 4], 0.3, 1.7) + # Flactuation
+                              sps.uniform.logpdf(theta[:, 5], 0.135, 0.3) + # Temp
+                              sps.uniform.logpdf(theta[:, 6], 0.13, 0.27) + # Kink       
+                              sps.uniform.logpdf(theta[:, 7], 0.01, 0.19) + # eta_s  
+                              sps.uniform.logpdf(theta[:, 8], -2, 3) + # slope_low  
+                              sps.uniform.logpdf(theta[:, 9], -1, 3) + # slope_high 
+                              sps.uniform.logpdf(theta[:, 10], 0.01, 0.24) + # max 
+                              sps.uniform.logpdf(theta[:, 11], 0.12, 0.18) + # Temp_peak  
+                              sps.uniform.logpdf(theta[:, 12], 0.025, 0.125) + # Width_peak      
+                              sps.uniform.logpdf(theta[:, 13], -0.8, 0.16) + # Asym_peak
+                              sps.uniform.logpdf(theta[:, 14], 0.3, 0.7) + # R           
+                              sps.uniform.logpdf(theta[:, 14], 0.05, 0.45)).reshape((len(theta), 1))   # tau_initial                                    
+                                                             
+
+    def rnd(n):
+        return np.vstack((sps.uniform.rvs(10, 20, size=n), 
+                          sps.uniform.rvs(-0.7, 1.4, size=n),
+                          sps.uniform.rvs(0.5, 1, size=n),
+                          sps.uniform.rvs(0, 1.7**3, size=n),
+                          sps.uniform.rvs(0.3, 1.7, size=n),
+                          sps.uniform.rvs(0.135, 0.3, size=n),
+                          sps.uniform.rvs(0.13, 0.27, size=n),
+                          sps.uniform.rvs(0.01, 0.19, size=n),
+                          sps.uniform.rvs(-2, 3, size=n),
+                          sps.uniform.rvs(-1, 3, size=n),
+                          sps.uniform.rvs(0.01, 0.24, size=n),
+                          sps.uniform.rvs(0.12, 0.18, size=n),
+                          sps.uniform.rvs(0.025, 0.125, size=n),
+                          sps.uniform.rvs(-0.8, 0.16, size=n),
+                          sps.uniform.rvs(0.3, 0.7, size=n),
+                          sps.uniform.rvs(0.05, 0.45, size=n))).T  
+    
+# dET_deta, dN_dy_kaon, dN_dy_pion, dN_dy_proton
+u1 = ['dET_deta', 'dN_dy_kaon', 'dN_dy_pion', 'dN_dy_proton']
+xcal_all = []
+ycal_all = []
+for u in u1:
+    whereu = u == x_np[:, 0]
+    x_cal = x_np[whereu, :]
+    xcal_all.extend(x_cal)
+    y_cal = y_mean[whereu]
+    ycal_all.extend(y_cal)
+
+xcal_all = np.array(xcal_all)
+ycal_all = np.array(ycal_all)
+obsvar = np.maximum(0.1, 0.2*ycal_all)
+
+
+cal_1 = calibrator(emu=emu_tr,
+                   y=ycal_all,
+                   x=xcal_all,
+                   thetaprior=prior_VAH, 
+                   method='directbayes',
+                   yvar=obsvar)
+
+theta_rnd = cal_1.theta.rnd(1000)
