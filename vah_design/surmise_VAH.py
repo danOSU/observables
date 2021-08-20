@@ -119,31 +119,36 @@ class prior_VAH:
                               sps.uniform.logpdf(theta[:, 10], 0.01, 0.24) + # max 
                               sps.uniform.logpdf(theta[:, 11], 0.12, 0.18) + # Temp_peak  
                               sps.uniform.logpdf(theta[:, 12], 0.025, 0.125) + # Width_peak      
-                              sps.uniform.logpdf(theta[:, 13], -0.8, 0.16) + # Asym_peak
+                              sps.uniform.logpdf(theta[:, 13], -0.8, 1.6) + # Asym_peak
                               sps.uniform.logpdf(theta[:, 14], 0.3, 0.7) + # R           
-                              sps.uniform.logpdf(theta[:, 14], 0.05, 0.45)).reshape((len(theta), 1))   # tau_initial                                    
+                              sps.uniform.logpdf(theta[:, 15], 0.05, 0.45)).reshape((len(theta), 1))   # tau_initial                                    
                                                              
 
     def rnd(n):
-        return np.vstack((sps.uniform.rvs(10, 20, size=n), 
-                          sps.uniform.rvs(-0.7, 1.4, size=n),
-                          sps.uniform.rvs(0.5, 1, size=n),
-                          sps.uniform.rvs(0, 1.7**3, size=n),
-                          sps.uniform.rvs(0.3, 1.7, size=n),
-                          sps.uniform.rvs(0.135, 0.3, size=n),
-                          sps.uniform.rvs(0.13, 0.27, size=n),
-                          sps.uniform.rvs(0.01, 0.19, size=n),
-                          sps.uniform.rvs(-2, 3, size=n),
-                          sps.uniform.rvs(-1, 3, size=n),
-                          sps.uniform.rvs(0.01, 0.24, size=n),
-                          sps.uniform.rvs(0.12, 0.18, size=n),
-                          sps.uniform.rvs(0.025, 0.125, size=n),
-                          sps.uniform.rvs(-0.8, 0.16, size=n),
+        return np.vstack((sps.uniform.rvs(10, 20, size=n), # 0 
+                          sps.uniform.rvs(-0.7, 1.4, size=n), # 1 
+                          sps.uniform.rvs(0.5, 1, size=n), # 2 
+                          sps.uniform.rvs(0, 1.7**3, size=n), # 3
+                          sps.uniform.rvs(0.3, 1.7, size=n), # 4 
+                          sps.uniform.rvs(0.135, 0.3, size=n), # 5 
+                          sps.uniform.rvs(0.13, 0.27, size=n), # 6 
+                          sps.uniform.rvs(0.01, 0.19, size=n), # 7 
+                          sps.uniform.rvs(-2, 3, size=n), # 8 
+                          sps.uniform.rvs(-1, 3, size=n), # 9 
+                          sps.uniform.rvs(0.01, 0.24, size=n), # 10 
+                          sps.uniform.rvs(0.12, 0.18, size=n), # 11 
+                          sps.uniform.rvs(0.025, 0.125, size=n), # 12 
+                          sps.uniform.rvs(-0.8, 1.6, size=n), # 13 
                           sps.uniform.rvs(0.3, 0.7, size=n),
                           sps.uniform.rvs(0.05, 0.45, size=n))).T  
     
 # dET_deta, dN_dy_kaon, dN_dy_pion, dN_dy_proton
+# Left column
+# Mid-column
+# Right column
 u1 = ['dET_deta', 'dN_dy_kaon', 'dN_dy_pion', 'dN_dy_proton']
+#u1 = ['dNch_deta', 'mean_pT_kaon', 'mean_pT_pion', 'mean_pT_proton']
+#u1 = ['pT_fluct', 'v22', 'v32', 'v42']
 xcal_all = []
 ycal_all = []
 for u in u1:
@@ -158,11 +163,20 @@ ycal_all = np.array(ycal_all)
 obsvar = np.maximum(0.1, 0.2*ycal_all)
 
 
+#breakpoint()
 cal_1 = calibrator(emu=emu_tr,
                    y=ycal_all,
                    x=xcal_all,
                    thetaprior=prior_VAH, 
-                   method='directbayes',
+                   method='directbayeswoodbury',
+                   #args={'sampler': 'PTLMC'},
                    yvar=obsvar)
 
 theta_rnd = cal_1.theta.rnd(1000)
+fig, axis = plt.subplots(4, 4, figsize=(15, 15))
+k = 0
+for i in range(4):
+    for j in range(4):
+        axis[i, j].boxplot(theta_rnd[:, k])
+        k += 1
+plt.show()
