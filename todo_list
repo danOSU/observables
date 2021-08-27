@@ -1,0 +1,7 @@
+08/20/21
+To do for Dan
+1. Why the Nan's are there in the observables for some design points? (13 points)
+2. There were some events where we had more than 108 events or less than 108 events per design points. What is going on there? 
+3. Check dmin^3 prior. Are we setting prior for dmin or dmin^3.
+4. Update the SDK document with VAH
+
