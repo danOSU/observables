@@ -35,7 +35,7 @@ plt.show()
 
 colname_exp = exp_data.columns
 colname_sim = df_mean.columns
-
+colname_theta = theta.columns
 # Remove nas
 which_nas = df_mean.isnull().any(axis=1)
 theta_np = theta.to_numpy()
@@ -146,22 +146,27 @@ class prior_VAH:
 # Left column
 # Mid-column
 # Right column
-u1 = ['dET_deta', 'dN_dy_kaon', 'dN_dy_pion', 'dN_dy_proton']
+#u1 = ['dET_deta', 'dN_dy_kaon', 'dN_dy_pion', 'dN_dy_proton']
 #u1 = ['dNch_deta', 'mean_pT_kaon', 'mean_pT_pion', 'mean_pT_proton']
-#u1 = ['pT_fluct', 'v22', 'v32', 'v42']
+u1 = ['pT_fluct', 'v22', 'v32', 'v42']
 xcal_all = []
 ycal_all = []
+y_calsd = []
+ycal_sd_all = []
 for u in u1:
     whereu = u == x_np[:, 0]
     x_cal = x_np[whereu, :]
     xcal_all.extend(x_cal)
     y_cal = y_mean[whereu]
+    y_calsd = y_sd[whereu]
     ycal_all.extend(y_cal)
-
+    ycal_sd_all.extend(y_calsd)
+    
 xcal_all = np.array(xcal_all)
 ycal_all = np.array(ycal_all)
-obsvar = np.maximum(0.1, 0.2*ycal_all)
-
+ycal_sd_all = np.array(ycal_sd_all)
+#obsvar = np.maximum(0.1, 0.2*ycal_all)
+obsvar = np.maximum(0.00001, ycal_sd_all)
 
 #breakpoint()
 cal_1 = calibrator(emu=emu_tr,
@@ -169,14 +174,34 @@ cal_1 = calibrator(emu=emu_tr,
                    x=xcal_all,
                    thetaprior=prior_VAH, 
                    method='directbayeswoodbury',
-                   #args={'sampler': 'PTLMC'},
+                   args={'sampler': 'PTLMC'},
                    yvar=obsvar)
 
 theta_rnd = cal_1.theta.rnd(1000)
-fig, axis = plt.subplots(4, 4, figsize=(15, 15))
-k = 0
-for i in range(4):
-    for j in range(4):
-        axis[i, j].boxplot(theta_rnd[:, k])
-        k += 1
+
+df = pd.DataFrame(theta_rnd, columns = colname_theta)
+import seaborn as sns
+fig, axs = plt.subplots(4,4, figsize=(16, 16))
+theta_prior = pd.DataFrame(prior_VAH.rnd(1000), columns = colname_theta)
+theta_prior.hist(ax=axs)
+df.hist(ax=axs, bins=25)
+
+
+sns.pairplot(df)
+plt.show()
+
+post = cal_1.predict(xcal_all)
+rndm_m = post.rnd(s = 1000)
+
+fig, axis = plt.subplots(1, 4, figsize=(20, 5))
+for u_id, u in enumerate(u1):
+    whereu = u == xcal_all[:, 0]
+    xp = xcal_all[whereu, :]
+    yp = ycal_all[whereu]
+    rnd_obs = rndm_m[:, whereu]
+    
+    for i in range(1000):
+        axis[u_id].plot(xp[:, 1], rnd_obs[i, :], color='grey', zorder=1)
+    axis[u_id].scatter(xp[:, 1], yp, color='red', zorder=2)
+    axis[u_id].set_ylabel(u)
 plt.show()
