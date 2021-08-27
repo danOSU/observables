@@ -4,4 +4,5 @@ To do for Dan
 2. There were some events where we had more than 108 events or less than 108 events per design points. What is going on there? 
 3. Check dmin^3 prior. Are we setting prior for dmin or dmin^3.
 4. Update the SDK document with VAH
+5. Check if the experimental data I have in the vah folder is same as Dereks experimental data.
 
