@@ -5,4 +5,5 @@ To do for Dan
 3. Check dmin^3 prior. Are we setting prior for dmin or dmin^3.
 4. Update the SDK document with VAH
 5. Check if the experimental data I have in the vah folder is same as Dereks experimental data.
+6. Try runnning the privateband rhic with emulators from vah and get corner plots
 
