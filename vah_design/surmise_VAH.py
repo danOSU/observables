@@ -9,13 +9,13 @@ import pyximport
 pyximport.install(setup_args={"include_dirs":np.get_include()},
                   reload_support=True)
 
-df_mean = pd.read_csv('mean_for_ozge_150design')
-df_sd = pd.read_csv('sd_for_ozge_150design')
+df_mean = pd.read_csv('mean_for_150_design')
+df_sd = pd.read_csv('sd_for_150_design')
 
 df_mean.shape
 df_sd.shape
 
-design = pd.read_csv('design_20210627.txt', delimiter = ' ')
+design = pd.read_csv('design_20210829.txt', delimiter = ' ')
 
 design.head()
 
@@ -35,7 +35,7 @@ plt.show()
 
 colname_exp = exp_data.columns
 colname_sim = df_mean.columns
-colname_theta = theta.columns
+colname_theta = theta.columns[0:15]
 # Remove nas
 which_nas = df_mean.isnull().any(axis=1)
 theta_np = theta.to_numpy()
@@ -69,6 +69,7 @@ for u in uniquex:
         j += 1
 
 # Split data into test and training
+theta_np = theta_np[:, 0:15]
 theta_test = theta_np[0:37, :] #theta_np#theta_np[0:37, :]
 theta_tr = theta_np[37:, :] #theta_np#theta_np[37:, :]
 f_test = f_np[:, 0:37] #f_np#f_np[:, 0:37]
@@ -109,7 +110,7 @@ class prior_VAH:
         return (sps.uniform.logpdf(theta[:, 0], 10, 20) +  # Pb_Pb
                               sps.uniform.logpdf(theta[:, 1], -0.7, 1.4) + # Mean
                               sps.uniform.logpdf(theta[:, 2], 0.5, 1) + # Width
-                              sps.uniform.logpdf(theta[:, 3], 0, 1.7**3) + # Dist
+                              sps.uniform.logpdf(theta[:, 3], 0, 1.7) + # Dist
                               sps.uniform.logpdf(theta[:, 4], 0.3, 1.7) + # Flactuation
                               sps.uniform.logpdf(theta[:, 5], 0.135, 0.3) + # Temp
                               sps.uniform.logpdf(theta[:, 6], 0.13, 0.27) + # Kink       
@@ -120,15 +121,14 @@ class prior_VAH:
                               sps.uniform.logpdf(theta[:, 11], 0.12, 0.18) + # Temp_peak  
                               sps.uniform.logpdf(theta[:, 12], 0.025, 0.125) + # Width_peak      
                               sps.uniform.logpdf(theta[:, 13], -0.8, 1.6) + # Asym_peak
-                              sps.uniform.logpdf(theta[:, 14], 0.3, 0.7) + # R           
-                              sps.uniform.logpdf(theta[:, 15], 0.05, 0.45)).reshape((len(theta), 1))   # tau_initial                                    
+                              sps.uniform.logpdf(theta[:, 14], 0.3, 0.7)).reshape((len(theta), 1))   # tau_initial                                    
                                                              
 
     def rnd(n):
         return np.vstack((sps.uniform.rvs(10, 20, size=n), # 0 
                           sps.uniform.rvs(-0.7, 1.4, size=n), # 1 
                           sps.uniform.rvs(0.5, 1, size=n), # 2 
-                          sps.uniform.rvs(0, 1.7**3, size=n), # 3
+                          sps.uniform.rvs(0, 1.7, size=n), # 3
                           sps.uniform.rvs(0.3, 1.7, size=n), # 4 
                           sps.uniform.rvs(0.135, 0.3, size=n), # 5 
                           sps.uniform.rvs(0.13, 0.27, size=n), # 6 
@@ -139,16 +139,16 @@ class prior_VAH:
                           sps.uniform.rvs(0.12, 0.18, size=n), # 11 
                           sps.uniform.rvs(0.025, 0.125, size=n), # 12 
                           sps.uniform.rvs(-0.8, 1.6, size=n), # 13 
-                          sps.uniform.rvs(0.3, 0.7, size=n),
-                          sps.uniform.rvs(0.05, 0.45, size=n))).T  
+                          sps.uniform.rvs(0.3, 0.7, size=n))).T  
     
 # dET_deta, dN_dy_kaon, dN_dy_pion, dN_dy_proton
 # Left column
 # Mid-column
 # Right column
-#u1 = ['dET_deta', 'dN_dy_kaon', 'dN_dy_pion', 'dN_dy_proton']
+u1 = ['dET_deta', 'dN_dy_kaon', 'dN_dy_pion', 'dN_dy_proton']
 #u1 = ['dNch_deta', 'mean_pT_kaon', 'mean_pT_pion', 'mean_pT_proton']
-u1 = ['pT_fluct', 'v22', 'v32', 'v42']
+#u1 = ['pT_fluct', 'v22', 'v32', 'v42']
+
 xcal_all = []
 ycal_all = []
 y_calsd = []
@@ -175,13 +175,13 @@ cal_1 = calibrator(emu=emu_tr,
                    thetaprior=prior_VAH, 
                    method='directbayeswoodbury',
                    args={'sampler': 'PTLMC'},
-                   yvar=obsvar)
+                   yvar=0.1*obsvar)
 
 theta_rnd = cal_1.theta.rnd(1000)
 
 df = pd.DataFrame(theta_rnd, columns = colname_theta)
 import seaborn as sns
-fig, axs = plt.subplots(4,4, figsize=(16, 16))
+fig, axs = plt.subplots(5, 3, figsize=(16, 16))
 theta_prior = pd.DataFrame(prior_VAH.rnd(1000), columns = colname_theta)
 theta_prior.hist(ax=axs)
 df.hist(ax=axs, bins=25)
