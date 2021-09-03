@@ -112,7 +112,7 @@ class prior_VAH:
                               sps.uniform.logpdf(theta[:, 2], 0.5, 1) + # Width
                               sps.uniform.logpdf(theta[:, 3], 0, 1.7) + # Dist
                               sps.uniform.logpdf(theta[:, 4], 0.3, 1.7) + # Flactuation
-                              sps.uniform.logpdf(theta[:, 5], 0.135, 0.3) + # Temp
+                              sps.uniform.logpdf(theta[:, 5], 0.135, 0.03) + # Temp
                               sps.uniform.logpdf(theta[:, 6], 0.13, 0.27) + # Kink       
                               sps.uniform.logpdf(theta[:, 7], 0.01, 0.19) + # eta_s  
                               sps.uniform.logpdf(theta[:, 8], -2, 3) + # slope_low  
@@ -130,7 +130,7 @@ class prior_VAH:
                           sps.uniform.rvs(0.5, 1, size=n), # 2 
                           sps.uniform.rvs(0, 1.7, size=n), # 3
                           sps.uniform.rvs(0.3, 1.7, size=n), # 4 
-                          sps.uniform.rvs(0.135, 0.3, size=n), # 5 
+                          sps.uniform.rvs(0.135, 0.03, size=n), # 5 
                           sps.uniform.rvs(0.13, 0.27, size=n), # 6 
                           sps.uniform.rvs(0.01, 0.19, size=n), # 7 
                           sps.uniform.rvs(-2, 3, size=n), # 8 
