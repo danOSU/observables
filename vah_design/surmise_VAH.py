@@ -9,8 +9,8 @@ import pyximport
 pyximport.install(setup_args={"include_dirs":np.get_include()},
                   reload_support=True)
 
-df_mean = pd.read_csv('mean_for_150_design')
-df_sd = pd.read_csv('sd_for_150_design')
+df_mean = pd.read_csv('Data/mean_for_150_design')
+df_sd = pd.read_csv('Data/sd_for_150_design')
 
 df_mean.shape
 df_sd.shape
@@ -145,7 +145,10 @@ class prior_VAH:
 # Left column
 # Mid-column
 # Right column
-u1 = ['dET_deta', 'dN_dy_kaon', 'dN_dy_pion', 'dN_dy_proton']
+u1 = ['dET_deta', 'dN_dy_kaon', 'dN_dy_pion', 'dN_dy_proton',
+      'dNch_deta', 'mean_pT_kaon', 'mean_pT_pion', 'mean_pT_proton',
+      'pT_fluct', 'v22', 'v32', 'v42']
+#u1 = ['dET_deta', 'dN_dy_kaon', 'dN_dy_pion', 'dN_dy_proton']
 #u1 = ['dNch_deta', 'mean_pT_kaon', 'mean_pT_pion', 'mean_pT_proton']
 #u1 = ['pT_fluct', 'v22', 'v32', 'v42']
 
@@ -166,7 +169,7 @@ xcal_all = np.array(xcal_all)
 ycal_all = np.array(ycal_all)
 ycal_sd_all = np.array(ycal_sd_all)
 #obsvar = np.maximum(0.1, 0.2*ycal_all)
-obsvar = np.maximum(0.00001, ycal_sd_all)
+obsvar = np.maximum(0.00001, 0.5*ycal_sd_all)
 
 #breakpoint()
 cal_1 = calibrator(emu=emu_tr,
@@ -193,15 +196,21 @@ plt.show()
 post = cal_1.predict(xcal_all)
 rndm_m = post.rnd(s = 1000)
 
-fig, axis = plt.subplots(1, 4, figsize=(20, 5))
-for u_id, u in enumerate(u1):
-    whereu = u == xcal_all[:, 0]
-    xp = xcal_all[whereu, :]
-    yp = ycal_all[whereu]
-    rnd_obs = rndm_m[:, whereu]
-    
-    for i in range(1000):
-        axis[u_id].plot(xp[:, 1], rnd_obs[i, :], color='grey', zorder=1)
-    axis[u_id].scatter(xp[:, 1], yp, color='red', zorder=2)
-    axis[u_id].set_ylabel(u)
+fig, axis = plt.subplots(4, 3, figsize=(15, 15))
+#for u_id, u in enumerate(u1):
+m = 0
+
+for k in range(3):
+    for j in range(4):
+        u = uniquex[m]
+        whereu = u == xcal_all[:, 0]
+        xp = xcal_all[whereu, :]
+        yp = ycal_all[whereu]
+        rnd_obs = rndm_m[:, whereu]
+        
+        for i in range(500):
+            axis[j, k].plot(xp[:, 1], rnd_obs[i, :], color='grey', zorder=1)
+        axis[j, k].scatter(xp[:, 1], yp, color='red', zorder=2)
+        axis[j, k].set_ylabel(u)
+        m += 1
 plt.show()
