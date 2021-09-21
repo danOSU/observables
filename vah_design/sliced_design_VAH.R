@@ -8,7 +8,7 @@ theta_no <- 15 # number of parameters
 sliced_design_VAH <- maximinSLHD(t = n/m, m = m, k = theta_no)$StandDesign
 
 # Write the original standardized design 
-write.table(sliced_design_VAH, 'sliced_VAH.txt')
+write.table(sliced_design_VAH, 'sliced_VAH_test.txt')
 
 lb <- c(10, -0.7, 0.5, 0, 0.3, 0.135, 0.13, 0.01, -2, -1, 0.01, 0.12, 0.025, -0.8, 0.3)
 ub <- c(30, 0.7, 1.5, 1.7, 2, 0.165, 0.3, 0.2, 1, 2, 0.25, 0.3, 0.15, 0.8, 1)
@@ -23,7 +23,7 @@ colnames <- c('Pb_Pb', 'Mean', 'Width', 'Dist', 'Flactutation', 'Temp', 'Kink', 
   'Max', 'Temp_peak', 'Width_peak', 'Asym_peak', 'R', 'tau_initial')
 colnames(design) <- colnames
 
-write.table(design, row.names = F, 'sliced_VAH_090321.txt')
+write.table(design, row.names = F, 'sliced_VAH_090321_test.txt')
 
 # Observe first slice
 pairs(design[1:50,],  pch = 19)
