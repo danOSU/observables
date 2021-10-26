@@ -1,9 +1,18 @@
 08/20/21
 To do for Dan
 1. Why the Nan's are there in the observables for some design points? (13 points)
-2. There were some events where we had more than 108 events or less than 108 events per design points. What is going on there? 
+2. There were some events where we had more than 108 events or less than 108 events per design points. What is going on there?
 3. Check dmin^3 prior. Are we setting prior for dmin or dmin^3.
 4. Update the SDK document with VAH
 5. Check if the experimental data I have in the vah folder is same as Dereks experimental data.
 6. Try runnning the privateband rhic with emulators from vah and get corner plots
 
+09/03/21
+1. Get a single design and run 100,200,...2000 in sequance to see how sd of calculated observables
+change with number of events per design. Identify how many events we need to get something
+that can be compared with experimental observation error.
+
+2. Fill in the SDK document
+
+3. Put 5 rst files in privateband explaning each part of our work. Also migrate things in
+observable repo to privateband because we will be able to publish it later with the paper.
