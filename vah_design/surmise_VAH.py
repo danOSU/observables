@@ -158,12 +158,25 @@ emu_tr = emulator(x=x_np,
 
 pred_test = emu_tr.predict(x=x_np, theta=theta_test)
 pred_test_mean = pred_test.mean()
+pred_test_var = pred_test.var()
 
 # Check error
 errors_test = (pred_test_mean - f_test).flatten()
 sst = np.sum((f_test.flatten() - np.mean(f_test.flatten()))**2)
 print('MSE test=', np.mean(errors_test**2))
 print('rsq test=', 1 - np.sum(errors_test**2)/sst)
+
+rsq = []
+for i in range(pred_test_mean.shape[0]):
+    sse = np.sum((pred_test_mean[i, :] - f_test[i, :])**2)
+    sst = np.sum((f_test[i, :] - np.mean(f_test[i, :]))**2)
+    rsq.append(1 - sse/sst)
+    print(selected_observables[i])
+    
+plt.scatter(np.arange(pred_test_mean.shape[0]), rsq)
+plt.xlabel('observables')
+plt.ylabel('test rsq')
+plt.show()
 
 # Observe test prediction
 fig = plt.figure()
@@ -173,6 +186,74 @@ plt.xlabel('Simulator outcome (test)')
 plt.ylabel('Emulator prediction (test)')
 plt.show()
 
+fig, axis = plt.subplots(4, 2, figsize=(15, 15))
+i, j = 0, 0
+for o in uniquex:
+    idx = o == x_np[:, 0]
+    axis[i, j].scatter(f_test[idx, :], pred_test_mean[idx, :], alpha=0.5)
+    if np.max(pred_test_mean[idx, :]) > np.max(f_test[idx, :]):
+        xlu = np.ceil(np.max(pred_test_mean[idx, :]))
+    else:
+        xlu = np.ceil(np.max(f_test[idx, :]))
+    if np.min(pred_test_mean[idx, :]) > np.min(f_test[idx, :]):
+        xll = np.floor(np.min(f_test[idx, :]))
+    else:
+        xll = np.floor(np.min(pred_test_mean[idx, :]))
+    axis[i, j].plot(range(int(xll), int(xlu)+1), range(int(xll), int(xlu)+1), color='red')
+
+    sse = np.sum((pred_test_mean[idx, :] - f_test[idx, :])**2)
+    sst = np.sum((f_test[idx, :] - np.mean(f_test[idx, :]))**2)
+    #rsq.append(1 - sse/sst)
+    axis[i, j].set_title('r2:'+ str(np.round(1 - sse/sst, 2)))
+    print(1 - sse/sst)
+    i += 1
+    if i > 3:
+        i = 0
+        j = 1
+    
+fig, axis = plt.subplots(4, 2, figsize=(15, 15))
+i, j = 0, 0
+for o in uniquex:
+    idx = o == x_np[:, 0]
+    e = (pred_test_mean[idx, :] - f_test[idx, :]).flatten()
+    axis[i, j].hist(e, bins=25)
+    i += 1
+    if i > 3:
+        i = 0
+        j = 1
+
+# Check error distribution
+mu = 0
+variance = 1
+sigma = np.sqrt(variance)
+x = np.linspace(mu - 3*sigma, mu + 3*sigma, 100)
+
+fig, axis = plt.subplots(4, 2, figsize=(15, 15))
+i, j = 0, 0
+for o in uniquex:
+    idx = o == x_np[:, 0]
+    e = ((pred_test_mean[idx, :] - f_test[idx, :])/np.sqrt(pred_test_var[idx, :])).flatten()
+    axis[i, j].hist(e, bins=25, density=True)
+    axis[i, j].plot(x, stats.norm.pdf(x, mu, sigma), color='red')
+    axis[i, j].set_title(o)
+    i += 1
+    if i > 3:
+        i = 0
+        j = 1
+
+# Check relative error
+fig, axis = plt.subplots(4, 2, figsize=(15, 15))
+i, j = 0, 0
+for o in uniquex:
+    idx = o == x_np[:, 0]
+    e = ((pred_test_mean[idx, :] - f_test[idx, :])/f_test[idx, :]).flatten()
+    axis[i, j].hist(e, bins=25, density=True)
+    axis[i, j].set_title(o)
+    i += 1
+    if i > 3:
+        i = 0
+        j = 1
+        
 # Check training 
 pred_tr = emu_tr.predict(x=x_np, theta=theta_np)
 pred_tr_mean = pred_tr.mean()
