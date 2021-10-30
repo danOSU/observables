@@ -162,7 +162,8 @@ sigma = np.sqrt(variance)
 x = np.linspace(mu - 3*sigma, mu + 3*sigma, 100)
 
 
-    
+f_np = np.log10(f_np + 1)
+f_test = np.log10(f_test + 1)
 # Build an emulator 
 for o in uniquex:
     idx = o == x_np[:, 0]
@@ -171,7 +172,7 @@ for o in uniquex:
                        theta=theta_np, 
                        f=f_np[idx, :], 
                        method='PCGPwM',
-                       args={'epsilon': 0.1}) 
+                       args={'epsilon': 0.01}) 
 
     pred_test = emu_tr.predict(x=x_np[idx, :], theta=theta_test)
     pred_test_mean = pred_test.mean()
