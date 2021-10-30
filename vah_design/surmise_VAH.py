@@ -10,8 +10,8 @@ import pyximport
 pyximport.install(setup_args={"include_dirs":np.get_include()},
                   reload_support=True)
 
-df_mean = pd.read_csv('mean_for_200_sliced_200_events_design', index_col=0)
-df_sd = pd.read_csv('sd_for_200_sliced_200_events_design', index_col=0)
+df_mean = pd.read_csv('mean_for_300_sliced_200_events_design', index_col=0)
+df_sd = pd.read_csv('sd_for_300_sliced_200_events_design', index_col=0)
 
 df_mean_test = pd.read_csv("mean_for_50_sliced_200_events_test_design", index_col=0)
 df_sd_test = pd.read_csv("sd_for_50_sliced_200_events_test_design", index_col=0)
@@ -40,7 +40,7 @@ y_mean = exp_data.to_numpy()[0, ]
 y_sd = exp_data.to_numpy()[1, ]
 
 # Get the initial 200 parameter values
-theta = design.head(200)
+theta = design.head(300)
 theta.head()
 
 theta_validation = design_validation.iloc[0:50]
@@ -148,10 +148,10 @@ for u in uniquex:
         k += 1
     else:
         j += 1
+plt.show()
 
-
-f_test = np.log10(f_test + 1)
-f_np = np.log10(f_np + 1)
+f_test = np.log(f_test + 1)
+f_np = np.log(f_np + 1)
 # Build an emulator 
 emu_tr = emulator(x=x_np, 
                    theta=theta_np, 
@@ -271,7 +271,7 @@ print('rsq train=', 1 - np.sum(errors_tr**2)/sst_tr)
 # Observe test prediction
 fig = plt.figure()
 plt.scatter(f_np, pred_tr_mean, alpha=0.5)
-plt.plot(range(0, 3000), range(0, 3000), color='red')
+plt.plot(range(0, 5), range(0, 5), color='red')
 plt.xlabel('Simulator outcome (train)')
 plt.ylabel('Emulator prediction (train)')
 plt.show()
@@ -359,51 +359,51 @@ class prior_VAH:
 #ycal_all = np.array(ycal_all)
 #ycal_sd_all = np.array(ycal_sd_all)
 #obsvar = np.maximum(0.1, 0.2*ycal_all)
-obsvar = np.maximum(0.00001, 0.2*y_mean)
+#obsvar = np.maximum(0.00001, 0.2*y_mean)
 
 #breakpoint()
-cal_1 = calibrator(emu=emu_tr,
-                   y=y_mean,
-                   x=x_np,
-                   thetaprior=prior_VAH, 
-                   method='directbayeswoodbury',
-                   args={'sampler': 'PTLMC'},
-                   yvar=obsvar)
+#cal_1 = calibrator(emu=emu_tr,
+#                   y=y_mean,
+#                   x=x_np,
+#                   thetaprior=prior_VAH, 
+#                   method='directbayeswoodbury',
+#                   args={'sampler': 'PTLMC'},
+#                   yvar=obsvar)
 
-theta_rnd = cal_1.theta.rnd(1000)
+#theta_rnd = cal_1.theta.rnd(1000)
 
-df = pd.DataFrame(theta_rnd, columns=colnames)
-import seaborn as sns
-fig, axs = plt.subplots(5, 3, figsize=(16, 16))
-theta_prior = pd.DataFrame(prior_VAH.rnd(1000), columns=colnames)
-theta_prior.hist(ax=axs)
-df.hist(ax=axs, bins=25)
+# = pd.DataFrame(theta_rnd, columns=colnames)
+#import seaborn as sns
+#fig, axs = plt.subplots(5, 3, figsize=(16, 16))
+#theta_prior = pd.DataFrame(prior_VAH.rnd(1000), columns=colnames)
+#theta_prior.hist(ax=axs)
+#df.hist(ax=axs, bins=25)
 
-dfpost = pd.DataFrame(theta_rnd, columns = colnames)
-dfprior = pd.DataFrame(theta_prior, columns = colnames)
-df = pd.concat([dfprior, dfpost]) 
-pr = ['prior' for i in range(1000)]
-ps = ['posterior' for i in range(1000)]
-pr.extend(ps)
-df['distribution'] = pr
+#dfpost = pd.DataFrame(theta_rnd, columns = colnames)
+#dfprior = pd.DataFrame(theta_prior, columns = colnames)
+#df = pd.concat([dfprior, dfpost]) 
+#pr = ['prior' for i in range(1000)]
+#ps = ['posterior' for i in range(1000)]
+#pr.extend(ps)
+#df['distribution'] = pr
 #map_parameters = [2.5, 2.5, .65, 5]
 
-sns.set(style="white")
-def corrfunc(x, y, **kws):
-    r, _ = stats.pearsonr(x, y)
-    ax = plt.gca()
-    ax.annotate("r = {:.2f}".format(r),
-                xy=(.1, .9), xycoords=ax.transAxes)
+#sns.set(style="white")
+#def corrfunc(x, y, **kws):
+#    r, _ = stats.pearsonr(x, y)
+#    ax = plt.gca()
+#    ax.annotate("r = {:.2f}".format(r),
+#                xy=(.1, .9), xycoords=ax.transAxes)
 
-g = sns.PairGrid(df, palette=["blue", "red"], corner=True, diag_sharey=False, hue='distribution')
-g.map_diag(sns.kdeplot, shade=True)
-g.map_lower(sns.kdeplot, fill=True)
+#g = sns.PairGrid(df, palette=["blue", "red"], corner=True, diag_sharey=False, hue='distribution')
+#g.map_diag(sns.kdeplot, shade=True)
+#g.map_lower(sns.kdeplot, fill=True)
 #g.map_lower(corrfunc)
 #cn = ['rc', 'vr0', 'a', 'vso']
 #for n,i in enumerate(map_parameters):
 #    ax=g.axes[n][n]
  #   ax.axvline(x=map_parameters[n], ls='--')
-g.add_legend()
+#g.add_legend()
 
 
 
