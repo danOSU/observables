@@ -9,9 +9,9 @@ from scipy import stats
 
 
 
-import pyximport
-pyximport.install(setup_args={"include_dirs":np.get_include()},
-                  reload_support=True)
+#import pyximport
+#pyximport.install(setup_args={"include_dirs":np.get_include()},
+#                  reload_support=True)
 
 
 n_train = 200
@@ -43,9 +43,9 @@ colname_exp = exp_data.columns
 #colname_sim = df_mean.columns
 #colname_theta = theta.columns
 
-# Gather what type of experimental data do we have. 
+# Gather what type of experimental data do we have.
 exp_label = []
-x = [] 
+x = []
 j = 0
 x_id = []
 for i in exp_data.columns:

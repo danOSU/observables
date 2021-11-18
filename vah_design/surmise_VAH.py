@@ -6,9 +6,9 @@ from surmise.calibration import calibrator
 import scipy.stats as sps
 from scipy import stats
 
-import pyximport
-pyximport.install(setup_args={"include_dirs":np.get_include()},
-                  reload_support=True)
+#import pyximport
+#pyximport.install(setup_args={"include_dirs":np.get_include()},
+#                  reload_support=True)
 
 df_mean = pd.read_csv('mean_for_300_sliced_200_events_design', index_col=0)
 df_sd = pd.read_csv('sd_for_300_sliced_200_events_design', index_col=0)
@@ -57,9 +57,9 @@ colname_exp = exp_data.columns
 #colname_sim = df_mean.columns
 #colname_theta = theta.columns
 
-# Gather what type of experimental data do we have. 
+# Gather what type of experimental data do we have.
 exp_label = []
-x = [] 
+x = []
 j = 0
 x_id = []
 for i in exp_data.columns:
@@ -84,7 +84,7 @@ df_mean.head()
 
 selected_observables = exp_label[0:-32]
 
-x_np = np.column_stack((x[0:-32], x_id[0:-32])) 
+x_np = np.column_stack((x[0:-32], x_id[0:-32]))
 x_np = x_np.astype('object')
 #x_np[:, 1] = x_np[:, 1].astype(int)
 y_mean = y_mean[0:-32]
@@ -152,12 +152,12 @@ plt.show()
 
 f_test = np.log(f_test + 1)
 f_np = np.log(f_np + 1)
-# Build an emulator 
-emu_tr = emulator(x=x_np, 
-                   theta=theta_np, 
-                   f=f_np, 
+# Build an emulator
+emu_tr = emulator(x=x_np,
+                   theta=theta_np,
+                   f=f_np,
                    method='PCGPwM',
-                   args={'epsilon': 0.01}) 
+                   args={'epsilon': 0.01})
 
 pred_test = emu_tr.predict(x=x_np, theta=theta_test)
 pred_test_mean = pred_test.mean()
@@ -176,7 +176,7 @@ for i in range(pred_test_mean.shape[0]):
     sst = np.sum((f_test[i, :] - np.mean(f_test[i, :]))**2)
     rsq.append(1 - sse/sst)
     print(selected_observables[i])
-    
+
 plt.scatter(np.arange(pred_test_mean.shape[0]), rsq)
 plt.xlabel('observables')
 plt.ylabel('test rsq')
@@ -214,7 +214,7 @@ for o in uniquex:
     if i > 3:
         i = 0
         j = 1
-    
+
 fig, axis = plt.subplots(4, 2, figsize=(15, 15))
 i, j = 0, 0
 for o in uniquex:
@@ -257,8 +257,8 @@ for o in uniquex:
     if i > 3:
         i = 0
         j = 1
-        
-# Check training 
+
+# Check training
 pred_tr = emu_tr.predict(x=x_np, theta=theta_np)
 pred_tr_mean = pred_tr.mean()
 
@@ -303,34 +303,34 @@ class prior_VAH:
                               sps.uniform.logpdf(theta[:, 3], 0, 1.7) + # Dist
                               sps.uniform.logpdf(theta[:, 4], 0.3, 1.7) + # Flactuation
                               sps.uniform.logpdf(theta[:, 5], 0.135, 0.03) + # Temp
-                              sps.uniform.logpdf(theta[:, 6], 0.13, 0.27) + # Kink       
-                              sps.uniform.logpdf(theta[:, 7], 0.01, 0.19) + # eta_s  
-                              sps.uniform.logpdf(theta[:, 8], -2, 3) + # slope_low  
-                              sps.uniform.logpdf(theta[:, 9], -1, 3) + # slope_high 
-                              sps.uniform.logpdf(theta[:, 10], 0.01, 0.24) + # max 
-                              sps.uniform.logpdf(theta[:, 11], 0.12, 0.18) + # Temp_peak  
-                              sps.uniform.logpdf(theta[:, 12], 0.025, 0.125) + # Width_peak      
+                              sps.uniform.logpdf(theta[:, 6], 0.13, 0.27) + # Kink
+                              sps.uniform.logpdf(theta[:, 7], 0.01, 0.19) + # eta_s
+                              sps.uniform.logpdf(theta[:, 8], -2, 3) + # slope_low
+                              sps.uniform.logpdf(theta[:, 9], -1, 3) + # slope_high
+                              sps.uniform.logpdf(theta[:, 10], 0.01, 0.24) + # max
+                              sps.uniform.logpdf(theta[:, 11], 0.12, 0.18) + # Temp_peak
+                              sps.uniform.logpdf(theta[:, 12], 0.025, 0.125) + # Width_peak
                               sps.uniform.logpdf(theta[:, 13], -0.8, 1.6) + # Asym_peak
-                              sps.uniform.logpdf(theta[:, 14], 0.3, 0.7)).reshape((len(theta), 1)) # R                                    
-                                                             
+                              sps.uniform.logpdf(theta[:, 14], 0.3, 0.7)).reshape((len(theta), 1)) # R
+
 
     def rnd(n):
-        return np.vstack((sps.uniform.rvs(10, 20, size=n), # 0 
-                          sps.uniform.rvs(-0.7, 1.4, size=n), # 1 
-                          sps.uniform.rvs(0.5, 1, size=n), # 2 
+        return np.vstack((sps.uniform.rvs(10, 20, size=n), # 0
+                          sps.uniform.rvs(-0.7, 1.4, size=n), # 1
+                          sps.uniform.rvs(0.5, 1, size=n), # 2
                           sps.uniform.rvs(0, 1.7, size=n), # 3
-                          sps.uniform.rvs(0.3, 1.7, size=n), # 4 
-                          sps.uniform.rvs(0.135, 0.03, size=n), # 5 
-                          sps.uniform.rvs(0.13, 0.27, size=n), # 6 
-                          sps.uniform.rvs(0.01, 0.19, size=n), # 7 
-                          sps.uniform.rvs(-2, 3, size=n), # 8 
-                          sps.uniform.rvs(-1, 3, size=n), # 9 
-                          sps.uniform.rvs(0.01, 0.24, size=n), # 10 
-                          sps.uniform.rvs(0.12, 0.18, size=n), # 11 
-                          sps.uniform.rvs(0.025, 0.125, size=n), # 12 
-                          sps.uniform.rvs(-0.8, 1.6, size=n), # 13 
-                          sps.uniform.rvs(0.3, 0.7, size=n))).T  
-    
+                          sps.uniform.rvs(0.3, 1.7, size=n), # 4
+                          sps.uniform.rvs(0.135, 0.03, size=n), # 5
+                          sps.uniform.rvs(0.13, 0.27, size=n), # 6
+                          sps.uniform.rvs(0.01, 0.19, size=n), # 7
+                          sps.uniform.rvs(-2, 3, size=n), # 8
+                          sps.uniform.rvs(-1, 3, size=n), # 9
+                          sps.uniform.rvs(0.01, 0.24, size=n), # 10
+                          sps.uniform.rvs(0.12, 0.18, size=n), # 11
+                          sps.uniform.rvs(0.025, 0.125, size=n), # 12
+                          sps.uniform.rvs(-0.8, 1.6, size=n), # 13
+                          sps.uniform.rvs(0.3, 0.7, size=n))).T
+
 # dET_deta, dN_dy_kaon, dN_dy_pion, dN_dy_proton
 # Left column
 # Mid-column
@@ -354,7 +354,7 @@ class prior_VAH:
 #    y_calsd = y_sd[whereu]
 #    ycal_all.extend(y_cal)
 #    ycal_sd_all.extend(y_calsd)
-    
+
 #xcal_all = np.array(xcal_all)
 #ycal_all = np.array(ycal_all)
 #ycal_sd_all = np.array(ycal_sd_all)
@@ -365,7 +365,7 @@ class prior_VAH:
 #cal_1 = calibrator(emu=emu_tr,
 #                   y=y_mean,
 #                   x=x_np,
-#                   thetaprior=prior_VAH, 
+#                   thetaprior=prior_VAH,
 #                   method='directbayeswoodbury',
 #                   args={'sampler': 'PTLMC'},
 #                   yvar=obsvar)
@@ -381,7 +381,7 @@ class prior_VAH:
 
 #dfpost = pd.DataFrame(theta_rnd, columns = colnames)
 #dfprior = pd.DataFrame(theta_prior, columns = colnames)
-#df = pd.concat([dfprior, dfpost]) 
+#df = pd.concat([dfprior, dfpost])
 #pr = ['prior' for i in range(1000)]
 #ps = ['posterior' for i in range(1000)]
 #pr.extend(ps)
@@ -424,7 +424,7 @@ for k in range(3):
         xp = xcal_all[whereu, :]
         yp = ycal_all[whereu]
         rnd_obs = rndm_m[:, whereu]
-        
+
         for i in range(500):
             axis[j, k].plot(xp[:, 1], rnd_obs[i, :], color='grey', zorder=1)
         axis[j, k].scatter(xp[:, 1], yp, color='red', zorder=2)
