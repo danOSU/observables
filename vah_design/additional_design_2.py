@@ -155,8 +155,8 @@ for u in uniquex:
     else:
         j += 1
 
-f_test = np.log(f_test) #np.sqrt(f_test) #np.log(f_test + 1)
-f_np = np.log(f_np) #np.sqrt(f_np) #np.log(f_np + 1)
+#f_test = np.log(f_test) #np.sqrt(f_test) #np.log(f_test + 1)
+#f_np = np.log(f_np) #np.sqrt(f_np) #np.log(f_np + 1)
 # Build an emulator 
 emu_tr = emulator(x=x_np, 
                    theta=theta_np, 
@@ -205,15 +205,12 @@ df = pd.DataFrame(x, columns = ['Pb_Pb',
                                 'Asym_peak',
                                 'R'])
 
-obsvar = np.maximum(0.00001, 0.2*y_mean)
+obsvar = y_sd
 
 def loglik(obsvar, emu, theta, y, x):
- 
-
     # Obtain emulator results
     emupredict = emu.predict(x, theta)
     emumean = emupredict.mean()
-
     try:
         emucov = emupredict.covx()
         is_cov = True
@@ -283,7 +280,6 @@ def inner(loglikelihood, theta, theta_cand_id, in_id):
         ll_cand = 1/(2*p)*(loglikelihood[theta_cand_id])
         ll_i = 1/(2*p)*(loglikelihood[i])
         inner_metric = ll_cand+ll_i+np.log(dist)
-
         if inner_metric < best_metric:
             best_metric = inner_metric
 
@@ -325,3 +321,4 @@ theta_out['data'] = 'out'
 frames = [theta_in, theta_out]
 frames = pd.concat(frames)
 sns.pairplot(frames, hue='data', diag_kind="hist")
+plt.show()
