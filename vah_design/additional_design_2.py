@@ -12,9 +12,9 @@ from surmise.calibration import calibrator
 import scipy.stats as sps
 from scipy import stats
 
-import pyximport
-pyximport.install(setup_args={"include_dirs":np.get_include()},
-                  reload_support=True)
+#import pyximport
+#pyximport.install(setup_args={"include_dirs":np.get_include()},
+#                  reload_support=True)
 
 df_mean = pd.read_csv('mean_for_200_sliced_200_events_design', index_col=0)
 df_sd = pd.read_csv('sd_for_200_sliced_200_events_design', index_col=0)
@@ -256,8 +256,10 @@ import random
 
 theta = np.array(df)
 loglikelihood = loglik(obsvar, emu_tr, theta, y_mean, x_np)
-loglikelihood_tr = (loglikelihood - np.min(loglikelihood))/(np.max(loglikelihood) - np.min(loglikelihood))
-maxid = np.argmax(loglikelihood_tr)
+#loglikelihood_tr = (loglikelihood - np.min(loglikelihood))/(np.max(loglikelihood) - np.min(loglikelihood))
+maxid = np.argmax(loglikelihood)
+
+theta_sc = xlimits[:,1] - xlimits[:,0]
 
 continuing = True
 theta_curr = theta[maxid]
@@ -277,10 +279,10 @@ def inner(loglikelihood, theta, theta_cand_id, in_id):
     best_metric = np.inf
     best_id = -5
     for i in in_id:
-        dist = np.sum((theta[theta_cand_id, :] - theta[i, :])**2)
-        ll_cand = (loglikelihood[theta_cand_id])**(1/p)
-        ll_i = (loglikelihood[i])**(1/p)
-        inner_metric = ll_cand*ll_i*dist
+        dist = np.sqrt(np.sum(((theta[theta_cand_id, :] - theta[i, :]) / theta_sc)**2))
+        ll_cand = 1/(2*p)*(loglikelihood[theta_cand_id])
+        ll_i = 1/(2*p)*(loglikelihood[i])
+        inner_metric = ll_cand+ll_i+np.log(dist)
 
         if inner_metric < best_metric:
             best_metric = inner_metric
@@ -295,7 +297,7 @@ while continuing:
     best_obj = -np.inf
     best_id = -5
     for o_id in out_id:
-        cand_value = inner(loglikelihood_tr, theta, o_id, in_id)
+        cand_value = inner(loglikelihood, theta, o_id, in_id)
 
         if cand_value > best_obj:
             best_obj = cand_value
@@ -310,10 +312,10 @@ while continuing:
     
       
     
-plt.hist(loglikelihood_tr[in_id])       
+plt.hist(loglikelihood[in_id])
 plt.show()
 
-plt.hist(loglikelihood_tr[out_id])     
+plt.hist(loglikelihood[out_id])
 plt.show()      
  
 theta_in = pd.DataFrame(theta[in_id, :])    
@@ -322,6 +324,4 @@ theta_in['data'] = 'in'
 theta_out['data'] = 'out'
 frames = [theta_in, theta_out]
 frames = pd.concat(frames)
-sns.pairplot(frames, hue='data', diag_kind="hist")        
-    
-    
+sns.pairplot(frames, hue='data', diag_kind="hist")
