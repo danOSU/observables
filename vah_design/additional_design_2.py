@@ -293,11 +293,11 @@ plt.show()
 # code to create a new design
 # define limits
 xlimits = np.array([[10, 30],
-                    [-0.7, 0.7],
+                    [-1, 0.7],
                     [0.5, 1.5],
                     [0, 1.7],
                     [0.3, 2],
-                    [0.135, 0.165],
+                    [0.12, 0.165],
                     [0.13, 0.3],
                     [0.01, 0.2],
                     [-2, 1],
@@ -310,7 +310,7 @@ xlimits = np.array([[10, 30],
 
 # obtain sampling object
 sampling = LHS(xlimits=xlimits)
-num = 500
+num = 2000
 x = sampling(num)
 print(x.shape)
 
@@ -394,7 +394,7 @@ in_id.append(maxid)
 out_id = list(np.arange(0, num))
 out_id.remove(maxid)
 
-n_select = 100
+n_select = 89
 p = theta.shape[1]
 
 def inner(loglikelihood, theta, theta_cand_id, in_id):
@@ -414,7 +414,8 @@ def inner(loglikelihood, theta, theta_cand_id, in_id):
     
     
 while continuing:
-    
+
+    iterator += 1        
     best_obj = -np.inf
     best_id = -5
     for o_id in out_id:
@@ -426,11 +427,11 @@ while continuing:
         
     in_id.append(best_id)
     out_id.remove(best_id)  
-     
-    iterator += 1
-    if iterator > n_select:
+
+    if iterator >= n_select:
         continuing = False
-    
+        
+
       
     
 plt.hist(loglikelihood[in_id])
@@ -442,8 +443,26 @@ plt.show()
 theta_in = pd.DataFrame(theta[in_id, :])    
 theta_out = pd.DataFrame(theta[out_id, :])      
 theta_in['data'] = 'in'
-theta_out['data'] = 'out'
-frames = [theta_in, theta_out]
+#theta_out['data'] = 'out'
+frames = [theta_in]
 frames = pd.concat(frames)
 sns.pairplot(frames, hue='data', diag_kind="hist")
 plt.show()
+
+theta_in = pd.DataFrame(np.round(theta[in_id, :], 4), columns = ['Pb_Pb',
+                                                                 'Mean',
+                                                                 'Width',
+                                                                 'Dist',
+                                                                 'Flactutation',
+                                                                 'Temp',
+                                                                 'Kink',
+                                                                 'eta_s',
+                                                                 'Slope_low',
+                                                                 'Slope_high',
+                                                                 'Max',
+                                                                 'Temp_peak',
+                                                                 'Width_peak',
+                                                                 'Asym_peak',
+                                                                 'R']) 
+theta_in.to_csv(r'add_design_121621.txt', header=True, index=None, sep=' ', mode='a')
+
