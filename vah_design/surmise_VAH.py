@@ -46,16 +46,14 @@ theta.head()
 theta_validation = design_validation.iloc[0:50]
 theta_validation.shape
 
-plt.scatter(theta.values[:,0], df_mean.values[:,0])
-plt.show()
+# plt.scatter(theta.values[:,0], df_mean.values[:,0])
+# plt.show()
 
-fig, axis = plt.subplots(3, 5, figsize=(10, 10))
-theta.hist(ax=axis)
-plt.show()
+# fig, axis = plt.subplots(3, 5, figsize=(10, 10))
+# theta.hist(ax=axis)
+# plt.show()
 
 colname_exp = exp_data.columns
-#colname_sim = df_mean.columns
-#colname_theta = theta.columns
 
 # Gather what type of experimental data do we have.
 exp_label = []
@@ -80,13 +78,12 @@ df_sd = df_sd[exp_label]
 df_mean_test = df_mean_test[exp_label]
 df_sd_test = df_sd_test[exp_label]
 
-df_mean.head()
+# df_mean.head()
 
 selected_observables = exp_label[0:-32]
 
 x_np = np.column_stack((x[0:-32], x_id[0:-32]))
 x_np = x_np.astype('object')
-#x_np[:, 1] = x_np[:, 1].astype(int)
 y_mean = y_mean[0:-32]
 y_sd = y_sd[0:-32]
 
@@ -116,9 +113,9 @@ df_sd = df_sd.drop(index=drop_index)
 df_mean_test = df_mean_test.drop(index=drop_index_vl)
 df_sd_test = df_sd_test.drop(index=drop_index_vl)
 
-df_mean.shape
-theta.shape
-theta.head()
+# df_mean.shape
+# theta.shape
+# theta.head()
 
 
 # Remove nas
@@ -127,8 +124,6 @@ f_np = df_mean.to_numpy()
 
 theta_test = theta_validation.to_numpy()
 f_test = df_mean_test.to_numpy()
-#theta_np = theta_np[-which_nas, :]
-#f_np = f_np[-which_nas, :]
 f_np = np.transpose(f_np)
 f_test = np.transpose(f_test)
 
@@ -149,9 +144,11 @@ for u in uniquex:
     else:
         j += 1
 
+plt.show()
 
-f_test = np.log10(f_test + 1)
-f_np = np.log10(f_np + 1)
+# f_test = np.log10(f_test + 1)
+# f_np = np.log10(f_np + 1)
+
 # Build an emulator
 emu_tr = emulator(x=x_np,
                    theta=theta_np,
@@ -331,37 +328,7 @@ class prior_VAH:
                           sps.uniform.rvs(-0.8, 1.6, size=n), # 13
                           sps.uniform.rvs(0.3, 0.7, size=n))).T
 
-# dET_deta, dN_dy_kaon, dN_dy_pion, dN_dy_proton
-# Left column
-# Mid-column
-# Right column
-#u1 = ['dET_deta', 'dN_dy_kaon', 'dN_dy_pion', 'dN_dy_proton',
-#      'dNch_deta', 'mean_pT_kaon', 'mean_pT_pion', 'mean_pT_proton',
-#      'pT_fluct', 'v22', 'v32', 'v42']
-#u1 = ['dET_deta', 'dN_dy_kaon', 'dN_dy_pion', 'dN_dy_proton']
-#u1 = ['dNch_deta', 'mean_pT_kaon', 'mean_pT_pion', 'mean_pT_proton']
-#u1 = ['pT_fluct', 'v22', 'v32', 'v42']
-
-#xcal_all = []
-#ycal_all = []
-#y_calsd = []
-#ycal_sd_all = []
-#for u in u1:
-#    whereu = u == x_np[:, 0]
-#    x_cal = x_np[whereu, :]
-#    xcal_all.extend(x_cal)
-#    y_cal = y_mean[whereu]
-#    y_calsd = y_sd[whereu]
-#    ycal_all.extend(y_cal)
-#    ycal_sd_all.extend(y_calsd)
-
-#xcal_all = np.array(xcal_all)
-#ycal_all = np.array(ycal_all)
-#ycal_sd_all = np.array(ycal_sd_all)
-#obsvar = np.maximum(0.1, 0.2*ycal_all)
-obsvar = np.maximum(0.00001, 0.2*y_mean)
-
-#breakpoint()
+obsvar = y_sd
 cal_1 = calibrator(emu=emu_tr,
                    y=y_mean,
                    x=x_np,
@@ -386,7 +353,6 @@ pr = ['prior' for i in range(1000)]
 ps = ['posterior' for i in range(1000)]
 pr.extend(ps)
 df['distribution'] = pr
-#map_parameters = [2.5, 2.5, .65, 5]
 
 sns.set(style="white")
 def corrfunc(x, y, **kws):
@@ -398,11 +364,6 @@ def corrfunc(x, y, **kws):
 g = sns.PairGrid(df, palette=["blue", "red"], corner=True, diag_sharey=False, hue='distribution')
 g.map_diag(sns.kdeplot, shade=True)
 g.map_lower(sns.kdeplot, fill=True)
-#g.map_lower(corrfunc)
-#cn = ['rc', 'vr0', 'a', 'vso']
-#for n,i in enumerate(map_parameters):
-#    ax=g.axes[n][n]
- #   ax.axvline(x=map_parameters[n], ls='--')
 g.add_legend()
 
 
@@ -410,24 +371,25 @@ g.add_legend()
 sns.pairplot(df)
 plt.show()
 
-post = cal_1.predict(xcal_all)
+post = cal_1.predict(x_np)
 rndm_m = post.rnd(s = 1000)
+rndm_m_tr = rndm_m 
 
-fig, axis = plt.subplots(4, 3, figsize=(15, 15))
-#for u_id, u in enumerate(u1):
-m = 0
+# Observe simulation outputs in comparison to real data
+fig, axis = plt.subplots(4, 2, figsize=(15, 15))
+j = 0
+k = 0
+uniquex = np.unique(x_np[:, 0])
+for u in uniquex:
+    whereu = u == x_np[:, 0]
+    for i in range(f_np.shape[1]):
+        axis[j, k].plot(x_np[whereu, 1].astype(int), rndm_m_tr[i, whereu], zorder=1, color='grey')
+    axis[j, k].scatter(x_np[whereu, 1].astype(int), y_mean[whereu], zorder=2, color='red')
+    axis[j, k].set_ylabel(u)
+    if j == 3:
+        j = 0
+        k += 1
+    else:
+        j += 1
 
-for k in range(3):
-    for j in range(4):
-        u = uniquex[m]
-        whereu = u == xcal_all[:, 0]
-        xp = xcal_all[whereu, :]
-        yp = ycal_all[whereu]
-        rnd_obs = rndm_m[:, whereu]
-
-        for i in range(500):
-            axis[j, k].plot(xp[:, 1], rnd_obs[i, :], color='grey', zorder=1)
-        axis[j, k].scatter(xp[:, 1], yp, color='red', zorder=2)
-        axis[j, k].set_ylabel(u)
-        m += 1
 plt.show()
