@@ -12,9 +12,8 @@ from surmise.calibration import calibrator
 import scipy.stats as sps
 from scipy import stats
 
-import pyximport
-pyximport.install(setup_args={"include_dirs":np.get_include()},
-                  reload_support=True)
+# Additional design points are generated based on Eq. 5 of 
+# ``Deterministic Sampling of Expensive Posteriors Using Minimum Energy Designs``
 
 df_mean = pd.read_csv('mean_for_200_sliced_200_events_design', index_col=0)
 df_sd = pd.read_csv('sd_for_200_sliced_200_events_design', index_col=0)
@@ -52,16 +51,14 @@ theta.head()
 theta_validation = design_validation.iloc[0:50]
 theta_validation.shape
 
-plt.scatter(theta.values[:,0], df_mean.values[:,0])
-plt.show()
+# plt.scatter(theta.values[:,0], df_mean.values[:,0])
+# plt.show()
 
-fig, axis = plt.subplots(3, 5, figsize=(10, 10))
-theta.hist(ax=axis)
-plt.show()
+# fig, axis = plt.subplots(3, 5, figsize=(10, 10))
+# theta.hist(ax=axis)
+# plt.show()
 
 colname_exp = exp_data.columns
-#colname_sim = df_mean.columns
-#colname_theta = theta.columns
 
 # Gather what type of experimental data do we have.
 exp_label = []
@@ -86,13 +83,12 @@ df_sd = df_sd[exp_label]
 df_mean_test = df_mean_test[exp_label]
 df_sd_test = df_sd_test[exp_label]
 
-df_mean.head()
+# df_mean.head()
 
 selected_observables = exp_label[0:-32]
 
 x_np = np.column_stack((x[0:-32], x_id[0:-32]))
 x_np = x_np.astype('object')
-#x_np[:, 1] = x_np[:, 1].astype(int)
 y_mean = y_mean[0:-32]
 y_sd = y_sd[0:-32]
 
@@ -122,9 +118,9 @@ df_sd = df_sd.drop(index=drop_index)
 df_mean_test = df_mean_test.drop(index=drop_index_vl)
 df_sd_test = df_sd_test.drop(index=drop_index_vl)
 
-df_mean.shape
-theta.shape
-theta.head()
+# df_mean.shape
+# theta.shape
+# theta.head()
 
 
 # Remove nas
@@ -133,8 +129,6 @@ f_np = df_mean.to_numpy()
 
 theta_test = theta_validation.to_numpy()
 f_test = df_mean_test.to_numpy()
-#theta_np = theta_np[-which_nas, :]
-#f_np = f_np[-which_nas, :]
 f_np = np.transpose(f_np)
 f_test = np.transpose(f_test)
 
@@ -155,23 +149,158 @@ for u in uniquex:
     else:
         j += 1
 
-f_test = np.log(f_test) #np.sqrt(f_test) #np.log(f_test + 1)
-f_np = np.log(f_np) #np.sqrt(f_np) #np.log(f_np + 1)
-# Build an emulator 
-emu_tr = emulator(x=x_np, 
-                   theta=theta_np, 
-                   f=f_np, 
+plt.show()
+
+# f_test = np.log10(f_test + 1)
+# f_np = np.log10(f_np + 1)
+
+# Build an emulator
+emu_tr = emulator(x=x_np,
+                   theta=theta_np,
+                   f=f_np,
                    method='PCGPwM',
                    args={'epsilon': 0.01})
+
+pred_test = emu_tr.predict(x=x_np, theta=theta_test)
+pred_test_mean = pred_test.mean()
+pred_test_var = pred_test.var()
+
+
+# Check error
+errors_test = (pred_test_mean - f_test).flatten()
+sst = np.sum((f_test.flatten() - np.mean(f_test.flatten()))**2)
+print('MSE test=', np.mean(errors_test**2))
+print('rsq test=', 1 - np.sum(errors_test**2)/sst)
+
+rsq = []
+for i in range(pred_test_mean.shape[0]):
+    sse = np.sum((pred_test_mean[i, :] - f_test[i, :])**2)
+    sst = np.sum((f_test[i, :] - np.mean(f_test[i, :]))**2)
+    rsq.append(1 - sse/sst)
+    print(selected_observables[i])
+
+plt.scatter(np.arange(pred_test_mean.shape[0]), rsq)
+plt.xlabel('observables')
+plt.ylabel('test rsq')
+plt.show()
+
+# Observe test prediction
+fig = plt.figure()
+plt.scatter(f_test, pred_test_mean, alpha=0.5)
+plt.plot(range(0, 5), range(0, 5), color='red')
+plt.xlabel('Simulator outcome (test)')
+plt.ylabel('Emulator prediction (test)')
+plt.show()
+
+fig, axis = plt.subplots(4, 2, figsize=(15, 15))
+i, j = 0, 0
+for o in uniquex:
+    idx = o == x_np[:, 0]
+    axis[i, j].scatter(f_test[idx, :], pred_test_mean[idx, :], alpha=0.5)
+    if np.max(pred_test_mean[idx, :]) > np.max(f_test[idx, :]):
+        xlu = np.ceil(np.max(pred_test_mean[idx, :]))
+    else:
+        xlu = np.ceil(np.max(f_test[idx, :]))
+    if np.min(pred_test_mean[idx, :]) > np.min(f_test[idx, :]):
+        xll = np.floor(np.min(f_test[idx, :]))
+    else:
+        xll = np.floor(np.min(pred_test_mean[idx, :]))
+    axis[i, j].plot(range(int(xll), int(xlu)+1), range(int(xll), int(xlu)+1), color='red')
+
+    sse = np.sum((pred_test_mean[idx, :] - f_test[idx, :])**2)
+    sst = np.sum((f_test[idx, :] - np.mean(f_test[idx, :]))**2)
+    #rsq.append(1 - sse/sst)
+    axis[i, j].set_title('r2:'+ str(np.round(1 - sse/sst, 2)))
+    print(1 - sse/sst)
+    i += 1
+    if i > 3:
+        i = 0
+        j = 1
+
+fig, axis = plt.subplots(4, 2, figsize=(15, 15))
+i, j = 0, 0
+for o in uniquex:
+    idx = o == x_np[:, 0]
+    e = (pred_test_mean[idx, :] - f_test[idx, :]).flatten()
+    axis[i, j].hist(e, bins=25)
+    i += 1
+    if i > 3:
+        i = 0
+        j = 1
+
+# Check error distribution
+mu = 0
+variance = 1
+sigma = np.sqrt(variance)
+x = np.linspace(mu - 3*sigma, mu + 3*sigma, 100)
+
+fig, axis = plt.subplots(4, 2, figsize=(15, 15))
+i, j = 0, 0
+for o in uniquex:
+    idx = o == x_np[:, 0]
+    e = ((pred_test_mean[idx, :] - f_test[idx, :])/np.sqrt(pred_test_var[idx, :])).flatten()
+    axis[i, j].hist(e, bins=25, density=True)
+    axis[i, j].plot(x, stats.norm.pdf(x, mu, sigma), color='red')
+    axis[i, j].set_title(o)
+    i += 1
+    if i > 3:
+        i = 0
+        j = 1
+
+# Check relative error
+fig, axis = plt.subplots(4, 2, figsize=(15, 15))
+i, j = 0, 0
+for o in uniquex:
+    idx = o == x_np[:, 0]
+    e = ((pred_test_mean[idx, :] - f_test[idx, :])/f_test[idx, :]).flatten()
+    axis[i, j].hist(e, bins=25, density=True)
+    axis[i, j].set_title(o)
+    i += 1
+    if i > 3:
+        i = 0
+        j = 1
+
+# Check training
+pred_tr = emu_tr.predict(x=x_np, theta=theta_np)
+pred_tr_mean = pred_tr.mean()
+
+# Check error
+errors_tr = (pred_tr_mean - f_np).flatten()
+sst_tr = np.sum((f_np.flatten() - np.mean(f_np.flatten()))**2)
+print('MSE train=', np.mean(errors_tr**2))
+print('rsq train=', 1 - np.sum(errors_tr**2)/sst_tr)
+
+# Observe test prediction
+fig = plt.figure()
+plt.scatter(f_np, pred_tr_mean, alpha=0.5)
+plt.plot(range(0, 3000), range(0, 3000), color='red')
+plt.xlabel('Simulator outcome (train)')
+plt.ylabel('Emulator prediction (train)')
+plt.show()
+
+# Check error distribution
+mu = 0
+variance = 1
+sigma = np.sqrt(variance)
+x = np.linspace(mu - 3*sigma, mu + 3*sigma, 100)
+
+pred_test_var = pred_test.var()
+fig, axs = plt.subplots(1, 2, tight_layout=True)
+axs[0].hist((pred_test_mean-f_test).flatten())
+# This should look like a standard normal
+axs[1].hist(((pred_test_mean-f_test)/np.sqrt(pred_test_var)).flatten(), density=True)
+axs[1].plot(x, stats.norm.pdf(x, mu, sigma), color='red')
+axs[1].set_title(r'${(\hat{\mu}_{test} - \mu_{test})}/{\hat{\sigma}_{test}}$')
+plt.show()
 
 # code to create a new design
 # define limits
 xlimits = np.array([[10, 30],
-                    [-0.7, 0.7],
+                    [-1, 0.7],
                     [0.5, 1.5],
-                    [0, 1.7**3],
+                    [0, 1.7],
                     [0.3, 2],
-                    [0.135, 0.165],
+                    [0.12, 0.165],
                     [0.13, 0.3],
                     [0.01, 0.2],
                     [-2, 1],
@@ -184,7 +313,7 @@ xlimits = np.array([[10, 30],
 
 # obtain sampling object
 sampling = LHS(xlimits=xlimits)
-num = 500
+num = 2000
 x = sampling(num)
 print(x.shape)
 
@@ -205,15 +334,12 @@ df = pd.DataFrame(x, columns = ['Pb_Pb',
                                 'Asym_peak',
                                 'R'])
 
-obsvar = np.maximum(0.00001, 0.2*y_mean)
+obsvar = y_sd
 
 def loglik(obsvar, emu, theta, y, x):
- 
-
     # Obtain emulator results
     emupredict = emu.predict(x, theta)
     emumean = emupredict.mean()
-
     try:
         emucov = emupredict.covx()
         is_cov = True
@@ -256,67 +382,90 @@ import random
 
 theta = np.array(df)
 loglikelihood = loglik(obsvar, emu_tr, theta, y_mean, x_np)
-threshold = np.sort(loglikelihood)[20] # find 10th highest likelihood as a threshodl to accept
+#loglikelihood_tr = (loglikelihood - np.min(loglikelihood))/(np.max(loglikelihood) - np.min(loglikelihood))
+maxid = np.argmax(loglikelihood)
+
+theta_sc = xlimits[:,1] - xlimits[:,0]
+
 continuing = True
-theta_curr = theta[0]
-idtheta = 0
+theta_curr = theta[maxid]
+
 iterator = 0
-idlist = []
-temp = 3000 # temperature
-alpha = 0.99 # to adjust decreasing temperature
-n_select = 100
+in_id = []
+in_id.append(maxid)
 
-def generate_neighbor(idlist, theta):
-    # finds the most distant neighbor of thetas in idlist
-    dmax = 0
-    idmax = 0
-    for i in range(len(theta)):
-        th = theta[i, :]
-        d = 0
-        for j in range(len(idlist)):
-            dist = th - theta[j, :]
-            d += np.sum(dist**2)
+out_id = list(np.arange(0, num))
+out_id.remove(maxid)
+
+n_select = 89
+p = theta.shape[1]
+
+def inner(loglikelihood, theta, theta_cand_id, in_id):
+    
+    best_metric = np.inf
+    for i in in_id:
+        dist = np.sqrt(np.sum(((theta[theta_cand_id, :] - theta[i, :]) / theta_sc)**2))
+        ll_cand = 1/(2*p)*(loglikelihood[theta_cand_id])
+        ll_i = 1/(2*p)*(loglikelihood[i])
+        inner_metric = ll_cand+ll_i+np.log(dist)
+        if inner_metric < best_metric:
+            best_metric = inner_metric
+
         
-        if (d > dmax) & (i not in idlist):
-            dmax = d
-            idmax = i
-            
-    return idmax
+    return best_metric
 
-no_badacc = 0
-   
+    
+    
 while continuing:
-    
-    if loglikelihood[idtheta] >= threshold:
-        # accept if it has high likelihood
-        idlist.append(idtheta)
-    else:
-        # if the likelihood is not high enough, accept is with decreasing prob
-        diff = loglikelihood[idtheta] - threshold
-        
-        # generate rndm variable
-        rndm = random.random()
-        
-        # compute acceptance probability
-        pro = np.exp(diff/temp)
 
-        if rndm < pro:
-            idlist.append(idtheta)
-            no_badacc += 1
-            print(loglikelihood[idtheta])
+    iterator += 1        
+    best_obj = -np.inf
+    best_id = -5
+    for o_id in out_id:
+        cand_value = inner(loglikelihood, theta, o_id, in_id)
 
-    idtheta = generate_neighbor(idlist, theta) #np.random.randint(500, size=1)[0]
+        if cand_value > best_obj:
+            best_obj = cand_value
+            best_id = o_id
         
-    temp *= alpha
-    
-    if len(idlist) >= n_select:
+    in_id.append(best_id)
+    out_id.remove(best_id)  
+
+    if iterator >= n_select:
         continuing = False
-            
-            
-theta_selected = theta[idlist, :]        
         
-        
-        
-        
+
+      
     
-    
+plt.hist(loglikelihood[in_id])
+plt.show()
+
+plt.hist(loglikelihood[out_id])
+plt.show()      
+ 
+theta_in = pd.DataFrame(theta[in_id, :])    
+theta_out = pd.DataFrame(theta[out_id, :])      
+theta_in['data'] = 'in'
+#theta_out['data'] = 'out'
+frames = [theta_in]
+frames = pd.concat(frames)
+sns.pairplot(frames, hue='data', diag_kind="hist")
+plt.show()
+
+theta_in = pd.DataFrame(np.round(theta[in_id, :], 4), columns = ['Pb_Pb',
+                                                                 'Mean',
+                                                                 'Width',
+                                                                 'Dist',
+                                                                 'Flactutation',
+                                                                 'Temp',
+                                                                 'Kink',
+                                                                 'eta_s',
+                                                                 'Slope_low',
+                                                                 'Slope_high',
+                                                                 'Max',
+                                                                 'Temp_peak',
+                                                                 'Width_peak',
+                                                                 'Asym_peak',
+                                                                 'R']) 
+theta_in.to_csv(r'add_design_121621.txt', header=True, index=None, sep=' ', mode='a')
+

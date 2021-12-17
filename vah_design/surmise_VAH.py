@@ -182,7 +182,7 @@ plt.show()
 # Observe test prediction
 fig = plt.figure()
 plt.scatter(f_test, pred_test_mean, alpha=0.5)
-plt.plot(range(0, 5), range(0, 5), color='red')
+plt.plot(range(0, 3000), range(0, 3000), color='red')
 plt.xlabel('Simulator outcome (test)')
 plt.ylabel('Emulator prediction (test)')
 plt.show()

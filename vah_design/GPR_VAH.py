@@ -5,6 +5,9 @@ from surmise.emulation import emulator
 from surmise.calibration import calibrator
 import scipy.stats as sps
 from scipy import stats
+from sklearn.preprocessing import StandardScaler
+from sklearn.gaussian_process import GaussianProcessRegressor as gpr
+from sklearn.gaussian_process import kernels as krnl
 
 import pyximport
 pyximport.install(setup_args={"include_dirs":np.get_include()},
@@ -129,75 +132,59 @@ theta_test = theta_validation.to_numpy()
 f_test_orig = df_mean_test.to_numpy()
 #theta_np = theta_np[-which_nas, :]
 #f_np = f_np[-which_nas, :]
-f_np_orig = np.transpose(f_np_orig)
-f_test_orig = np.transpose(f_test_orig)
+#f_np_orig = np.transpose(f_np_orig)
+#f_test_orig = np.transpose(f_test_orig)
 
 # Observe simulation outputs in comparison to real data
-fig, axis = plt.subplots(4, 2, figsize=(15, 15))
-j = 0
-k = 0
-uniquex = np.unique(x_np[:, 0])
-for u in uniquex:
-    whereu = u == x_np[:, 0]
-    for i in range(f_np_orig.shape[1]):
-        axis[j, k].plot(x_np[whereu, 1].astype(int), f_np_orig[whereu, i], zorder=1, color='grey')
-    axis[j, k].scatter(x_np[whereu, 1].astype(int), y_mean[whereu], zorder=2, color='red')
-    axis[j, k].set_ylabel(u)
-    if j == 3:
-        j = 0
-        k += 1
-    else:
-        j += 1
-plt.show()
-f_np_orig = np.transpose(f_np_orig)
+#fig, axis = plt.subplots(4, 2, figsize=(15, 15))
+#j = 0
+#k = 0
+#uniquex = np.unique(x_np[:, 0])
+#for u in uniquex:
+#    whereu = u == x_np[:, 0]
+#    for i in range(f_np_orig.shape[1]):
+#        axis[j, k].plot(x_np[whereu, 1].astype(int), f_np_orig[whereu, i], zorder=1, color='grey')
+#    axis[j, k].scatter(x_np[whereu, 1].astype(int), y_mean[whereu], zorder=2, color='red')
+#    axis[j, k].set_ylabel(u)
+#    if j == 3:
+#        j = 0
+#        k += 1
+#    else:
+#        j += 1
+#plt.show()
+#f_np_orig = np.transpose(f_np_orig)
 
-f_mean = np.mean(f_np_orig, axis=0)
-fstd = f_np_orig - f_mean
+#f_mean = np.mean(f_np_orig, axis=0)
+#fstd = f_np_orig - f_mean
+
+# Scaling the data to be zero mean and unit variance for each observables
+SS = StandardScaler(copy=True)
+# Singular Value Decomposition
+U, S, V = np.linalg.svd(SS.fit_transform(f_np_orig), full_matrices=True)
+print(f'shape of U {U.shape} shape of S {S.shape} shape of V {V.shape}')
 
 # Singular Value Decomposition
-U, S, V = np.linalg.svd(fstd, full_matrices=True)
-plt.plot(np.cumsum(S)/np.sum(S))
-plt.show()
+#U, S, V = np.linalg.svd(fstd, full_matrices=True)
 
-print(U.shape)
-print(S.shape)
-print(V.shape)
+npc = 10
+# print the explained raito of variance
+# https://stats.stackexchange.com/questions/2691/making-sense-of-principal-component-analysis-eigenvectors-eigenvalues
+fig, (ax1, ax2) = plt.subplots(1,2,figsize=(7,4))
+importance = np.square(S[:npc]/np.sqrt(U.shape[0]-1))
+cumulateive_importance = np.cumsum(importance)/np.sum(importance)
+idx = np.arange(1, 1 + len(importance))
+ax1.bar(idx, importance)
+ax1.set_xlabel("PC index")
+ax1.set_ylabel("Variance")
+ax2.bar(idx,cumulateive_importance)
+ax2.set_xlabel(r"The first $n$ PC")
+ax2.set_ylabel("Fraction of total variance")
+plt.tight_layout(True)
 
-eigenpc = np.linalg.eig(np.cov(np.transpose(fstd)))
-
-from sklearn.decomposition import PCA
-pca = PCA(n_components=78)
-pca.fit(fstd)
-
-print('SVD')
-print(V[0:5, 0:5])
-print('PCA')
-print(pca.components_[0:5, 0:5])
-print('eigenv')
-print(eigenpc[1][0:5, 0:5])
-
-ids = np.cumsum(S)/np.sum(S) <= 0.9
-
-
-#### Block 9 #### Please refer to this number in your questions
-#whiten and project data to principal component axis (only keeping first 10 PCs)
-
-#V = eigenpc[1]
-
-#aaa = V @ np.transpose(V)
-
-#Vtr = V[:, ids]
-
-#ftr = fstd @ Vtr
-#ftr = fstd @ V
-#ftr_1 = ftr[:, ids]
-
-#fstd_check = (ftr @ np.transpose(V))
-#fstdchck = fstdchck[:, ids]
  
 prior_min = [10, -0.7, 0.5, 0, 0.3, 0.135, 0.13, 0.01, -2, -1, 0.01, 0.12, 0.025, -0.8, 0.3]
 prior_max = [30, 0.7, 1.5, 1.7, 2, 0.165, 0.3, 0.2, 1, 2, 0.25, 0.3, 0.15, 0.8, 1]
-prior_df = pd.DataFrame(data=np.vstack((prior_min,prior_max)), index = ['min','max'])
+prior_df = pd.DataFrame(data=np.vstack((prior_min, prior_max)), index = ['min','max'])
 
 design_max = prior_df.loc['max'].values
 design_min = prior_df.loc['min'].values
@@ -205,15 +192,14 @@ design_min = prior_df.loc['min'].values
 ptp = design_max - design_min
 bound=zip(design_min, design_max)
 
-npc = sum(ids)
+#npc = sum(ids)
 Emulators = []
 
 pc_tf_data = U[:, 0:npc] * np.sqrt(U.shape[0] - 1)
-inverse_tf_matrix = np.diag(S[0:npc]) @ V[0:npc,:]/ np.sqrt(U.shape[0]-1)
-#ch = pc_tf_data @ inverse_tf_matrix
+print(f'Shape of PC transformed data {pc_tf_data.shape}')
+inverse_tf_matrix = np.diag(S[0:npc]) @ V[0:npc,:] * SS.scale_.reshape(1,-1) / np.sqrt(U.shape[0]-1)
 
-from sklearn.gaussian_process import GaussianProcessRegressor as gpr
-from sklearn.gaussian_process import kernels as krnl
+
 
 for i in range(0, npc):
     kernel = 1*krnl.RBF(length_scale=ptp, 
@@ -223,21 +209,116 @@ for i in range(0, npc):
     print(GPR.kernel_)
     print(f'GPR score is {GPR.score(theta, pc_tf_data[:,i])} \n')
     Emulators.append(GPR)
+ 
+def predict_GPR(param):
+    mean = []
+    variance = []
+    theta = np.array(param).flatten()
+    theta = np.array(theta).reshape(1,15)
+    for i in range(0,npc):
+        mn, std = Emulators[i].predict(theta,return_std=True)
+        mean.append(mn)
+        variance.append(std**2)
+    mean = np.array(mean).reshape(1,-1)
+    inverse_transformed_mean = mean @ inverse_tf_matrix + np.array(SS.mean_).reshape(1,-1)
+    variance_matrix = np.diag(np.array(variance).flatten())
+    A_p = inverse_tf_matrix
+    inverse_transformed_variance = np.einsum('ik,kl,lj-> ij', A_p.T, variance_matrix, A_p, optimize=False)
+    return inverse_transformed_mean, inverse_transformed_variance
     
-#theta=np.array(theta).reshape(1,15)
-mean = []
-variance = []
-for i in range(0, npc):
-    mn, std = Emulators[i].predict(theta, return_std=True)
-    mean.append(mn)
-    variance.append(std**2)
-mean = np.hstack(mean)
 
-mean_tr = mean @ inverse_tf_matrix + f_mean
-    
-#mean = np.array(mean) #.reshape(1,-1)
-#inverse_transformed_mean=mean @ inverse_tf_matrix + np.array(SS.mean_).reshape(1,-1)
-#variance_matrix=np.diag(np.array(variance).flatten())
-#A_p=inverse_tf_matrix
-#inverse_transformed_variance=np.einsum('ik,kl,lj-> ij', A_p.T, variance_matrix, A_p, optimize=False)
-#return inverse_transformed_mean, inverse_transformed_variance
+prediction_val = []
+prediction_sig_val = []
+for row in theta_validation.values:
+    prediction, pred_cov = predict_GPR(row)
+    prediction_sig_val.append(np.sqrt(np.diagonal(pred_cov)))
+    prediction_val.append(prediction)
+prediction_val = np.array(prediction_val).reshape(-1,len(selected_observables))
+prediction_sig_val = np.array(prediction_sig_val).reshape(-1,len(selected_observables))
+
+
+# Check error
+pred_test_var = np.transpose(prediction_sig_val)
+pred_test_mean = np.transpose(prediction_val)
+f_test = np.transpose(f_test_orig)
+errors_test = (pred_test_mean - f_test).flatten()
+sst = np.sum((f_test.flatten() - np.mean(f_test.flatten()))**2)
+print('MSE test=', np.mean(errors_test**2))
+print('rsq test=', 1 - np.sum(errors_test**2)/sst)
+
+rsq = []
+for i in range(pred_test_mean.shape[0]):
+    sse = np.sum((pred_test_mean[i, :] - f_test[i, :])**2)
+    sst = np.sum((f_test[i, :] - np.mean(f_test[i, :]))**2)
+    rsq.append(1 - sse/sst)
+
+plt.scatter(np.arange(pred_test_mean.shape[0]), rsq)
+plt.xlabel('observables')
+plt.ylabel('test rsq')
+plt.show()
+
+# Observe test prediction
+fig = plt.figure()
+plt.scatter(f_test, pred_test_mean, alpha=0.5)
+plt.plot(range(0, 3000), range(0, 3000), color='red')
+plt.xlabel('Simulator outcome (test)')
+plt.ylabel('Emulator prediction (test)')
+plt.show()
+
+uniquex = np.unique(x_np[:, 0])
+fig, axis = plt.subplots(4, 2, figsize=(15, 15))
+i, j = 0, 0
+for o in uniquex:
+    idx = o == x_np[:, 0]
+    axis[i, j].scatter(f_test[idx, :], pred_test_mean[idx, :], alpha=0.5)
+    if np.max(pred_test_mean[idx, :]) > np.max(f_test[idx, :]):
+        xlu = np.ceil(np.max(pred_test_mean[idx, :]))
+    else:
+        xlu = np.ceil(np.max(f_test[idx, :]))
+    if np.min(pred_test_mean[idx, :]) > np.min(f_test[idx, :]):
+        xll = np.floor(np.min(f_test[idx, :]))
+    else:
+        xll = np.floor(np.min(pred_test_mean[idx, :]))
+    axis[i, j].plot(range(int(xll), int(xlu)+1), range(int(xll), int(xlu)+1), color='red')
+
+    sse = np.sum((pred_test_mean[idx, :] - f_test[idx, :])**2)
+    sst = np.sum((f_test[idx, :] - np.mean(f_test[idx, :]))**2)
+    #rsq.append(1 - sse/sst)
+    axis[i, j].set_title('r2:'+ str(np.round(1 - sse/sst, 2)))
+    print(1 - sse/sst)
+    i += 1
+    if i > 3:
+        i = 0
+        j = 1
+        
+# Check error distribution
+mu = 0
+variance = 1
+sigma = np.sqrt(variance)
+x = np.linspace(mu - 3*sigma, mu + 3*sigma, 100)
+
+fig, axis = plt.subplots(4, 2, figsize=(15, 15))
+i, j = 0, 0
+for o in uniquex:
+    idx = o == x_np[:, 0]
+    e = ((pred_test_mean[idx, :] - f_test[idx, :])/np.sqrt(pred_test_var[idx, :])).flatten()
+    axis[i, j].hist(e, bins=25, density=True)
+    axis[i, j].plot(x, stats.norm.pdf(x, mu, sigma), color='red')
+    axis[i, j].set_title(o)
+    i += 1
+    if i > 3:
+        i = 0
+        j = 1
+
+# Check relative error
+fig, axis = plt.subplots(4, 2, figsize=(15, 15))
+i, j = 0, 0
+for o in uniquex:
+    idx = o == x_np[:, 0]
+    e = ((pred_test_mean[idx, :] - f_test[idx, :])/f_test[idx, :]).flatten()
+    axis[i, j].hist(e, bins=25, density=True)
+    axis[i, j].set_title(o)
+    i += 1
+    if i > 3:
+        i = 0
+        j = 1
