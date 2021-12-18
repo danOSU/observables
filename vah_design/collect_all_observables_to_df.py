@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as np      
 import pandas as pd
 
 # 8 bins
@@ -41,8 +41,8 @@ sdtype = [('Pb-Pb-2760',
 
 df_mean = {}
 df_sd = {}
-for i in range(0,150):
-    result_data = np.fromfile(f"/home/ac.liyanage/vah_run_events/ozge_events/{i}/obs_Pb-Pb-2760.dat", dtype = sdtype)
+for i in range(0,300):
+    result_data = np.fromfile(f"/home/ac.liyanage/vah_run_events/sliced_design/{i}/obs_Pb-Pb-2760.dat", dtype = sdtype)
     for obs, cent_list in obs_cent_list['Pb-Pb-2760'].items():
         for i,cen in enumerate(cent_list):
             mean=result_data["Pb-Pb-2760"][obs]["mean"][0][0][i]
@@ -59,8 +59,8 @@ for i in range(0,150):
                 df_mean[obs_name] = [mean]
                 df_sd[obs_name] = [sd]
 
-df1 = pd.DataFrame(data=df_mean, index=np.arange(150))
-df2 = pd.DataFrame(data=df_sd, index=np.arange(150))
+df1 = pd.DataFrame(data=df_mean, index=np.arange(300))
+df2 = pd.DataFrame(data=df_sd, index=np.arange(300))
 
-df1.to_csv("mean_for_ozge_150design")
-df2.to_csv("sd_for_ozge_150design")
+df1.to_csv("mean_for_300_sliced_200_events_design")
+df2.to_csv("sd_for_300_sliced_200_events_design")
