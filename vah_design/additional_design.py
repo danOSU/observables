@@ -12,11 +12,11 @@ from surmise.calibration import calibrator
 import scipy.stats as sps
 from scipy import stats
 
-# Additional design points are generated based on Eq. 5 of 
+# Additional design points are generated based on Eq. 5 of
 # ``Deterministic Sampling of Expensive Posteriors Using Minimum Energy Designs``
 
-df_mean = pd.read_csv('mean_for_200_sliced_200_events_design', index_col=0)
-df_sd = pd.read_csv('sd_for_200_sliced_200_events_design', index_col=0)
+df_mean = pd.read_csv('mean_for_300_sliced_200_events_design', index_col=0)
+df_sd = pd.read_csv('sd_for_300_sliced_200_events_design', index_col=0)
 
 df_mean_test = pd.read_csv("mean_for_50_sliced_200_events_test_design", index_col=0)
 df_sd_test = pd.read_csv("sd_for_50_sliced_200_events_test_design", index_col=0)
@@ -29,7 +29,7 @@ design.head()
 design.shape
 
 design_validation = pd.read_csv('sliced_VAH_090321_test.txt', delimiter = ' ')
-
+design_validation.shape
 colnames = design.columns
 
 #drop tau_initial parameter for now because we keep it fixed
@@ -45,7 +45,7 @@ y_mean = exp_data.to_numpy()[0, ]
 y_sd = exp_data.to_numpy()[1, ]
 
 # Get the initial 200 parameter values
-theta = design.head(200)
+theta = design.head(300)
 theta.head()
 
 theta_validation = design_validation.iloc[0:50]
@@ -104,7 +104,7 @@ print(f'Shape of the constrained simulation output {df_mean.shape}')
 
 # Remove bad designs
 
-drop_index = np.array([19, 23, 31, 32, 71, 91, 92, 98, 129, 131, 146, 162, 171, 174, 184, 190, 194, 195, 198])
+drop_index = np.array([19, 23, 31, 32, 71, 91, 92, 98, 129, 131, 146, 162, 171, 174, 184, 190, 194, 195, 198, 245, 248, 266, 283, 286, 291, 299])
 drop_index_vl = np.array([29, 35, ])
 theta = theta.drop(index=drop_index)
 theta.head()
@@ -295,8 +295,8 @@ plt.show()
 
 # code to create a new design
 # define limits
-xlimits = np.array([[10, 30],
-                    [-1, 0.7],
+xlimits = np.array([[20, 30],
+                    [-1, 0.2],
                     [0.5, 1.5],
                     [0, 1.7],
                     [0.3, 2],
@@ -401,7 +401,7 @@ n_select = 89
 p = theta.shape[1]
 
 def inner(loglikelihood, theta, theta_cand_id, in_id):
-    
+
     best_metric = np.inf
     for i in in_id:
         dist = np.sqrt(np.sum(((theta[theta_cand_id, :] - theta[i, :]) / theta_sc)**2))
@@ -411,14 +411,14 @@ def inner(loglikelihood, theta, theta_cand_id, in_id):
         if inner_metric < best_metric:
             best_metric = inner_metric
 
-        
+
     return best_metric
 
-    
-    
+
+
 while continuing:
 
-    iterator += 1        
+    iterator += 1
     best_obj = -np.inf
     best_id = -5
     for o_id in out_id:
@@ -427,24 +427,24 @@ while continuing:
         if cand_value > best_obj:
             best_obj = cand_value
             best_id = o_id
-        
+
     in_id.append(best_id)
-    out_id.remove(best_id)  
+    out_id.remove(best_id)
 
     if iterator >= n_select:
         continuing = False
-        
 
-      
-    
+
+
+
 plt.hist(loglikelihood[in_id])
 plt.show()
 
 plt.hist(loglikelihood[out_id])
-plt.show()      
- 
-theta_in = pd.DataFrame(theta[in_id, :])    
-theta_out = pd.DataFrame(theta[out_id, :])      
+plt.show()
+
+theta_in = pd.DataFrame(theta[in_id, :])
+theta_out = pd.DataFrame(theta[out_id, :])
 theta_in['data'] = 'in'
 #theta_out['data'] = 'out'
 frames = [theta_in]
@@ -466,6 +466,5 @@ theta_in = pd.DataFrame(np.round(theta[in_id, :], 4), columns = ['Pb_Pb',
                                                                  'Temp_peak',
                                                                  'Width_peak',
                                                                  'Asym_peak',
-                                                                 'R']) 
-theta_in.to_csv(r'add_design_121621.txt', header=True, index=None, sep=' ', mode='a')
-
+                                                                 'R'])
+theta_in.to_csv(r'add_design_122421.txt', header=True, index=None, sep=' ', mode='a')
