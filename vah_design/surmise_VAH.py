@@ -6,9 +6,9 @@ from surmise.calibration import calibrator
 import scipy.stats as sps
 from scipy import stats
 
-import pyximport
-pyximport.install(setup_args={"include_dirs":np.get_include()},
-                  reload_support=True)
+#import pyximport
+#pyximport.install(setup_args={"include_dirs":np.get_include()},
+#                  reload_support=True)
 
 df_mean = pd.read_csv('mean_for_200_sliced_200_events_design', index_col=0)
 df_sd = pd.read_csv('sd_for_200_sliced_200_events_design', index_col=0)
@@ -150,8 +150,8 @@ for u in uniquex:
         j += 1
 
 
-f_test = np.log10(f_test + 1)
-f_np = np.log10(f_np + 1)
+#f_test = np.log10(f_test + 1)
+#f_np = np.log10(f_np + 1)
 # Build an emulator
 emu_tr = emulator(x=x_np,
                    theta=theta_np,
@@ -366,7 +366,7 @@ cal_1 = calibrator(emu=emu_tr,
                    y=y_mean,
                    x=x_np,
                    thetaprior=prior_VAH,
-                   method='directbayeswoodbury',
+                   method='directbayes',
                    args={'sampler': 'PTLMC'},
                    yvar=obsvar)
 
@@ -387,8 +387,8 @@ ps = ['posterior' for i in range(1000)]
 pr.extend(ps)
 df['distribution'] = pr
 #map_parameters = [2.5, 2.5, .65, 5]
-
-sns.set(style="white")
+sns.set_context('poster',font_scale=1)
+#sns.set(style="white")
 def corrfunc(x, y, **kws):
     r, _ = stats.pearsonr(x, y)
     ax = plt.gca()
@@ -404,8 +404,8 @@ g.map_lower(sns.kdeplot, fill=True)
 #    ax=g.axes[n][n]
  #   ax.axvline(x=map_parameters[n], ls='--')
 g.add_legend()
-
-
+g.savefig('surmise_vah_posterior',dpi=100)
+seaborn.reset_defaults()
 
 sns.pairplot(df)
 plt.show()
