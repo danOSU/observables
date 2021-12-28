@@ -3,7 +3,6 @@ import pandas as pd
 from smt.sampling_methods import LHS
 import seaborn as sns
 from datetime import datetime
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,15 +17,21 @@ from scipy import stats
 df_mean = pd.read_csv('mean_for_300_sliced_200_events_design', index_col=0)
 df_sd = pd.read_csv('sd_for_300_sliced_200_events_design', index_col=0)
 
+df_mean_add = pd.read_csv('mean_for_90_add_batch0_800_events_design', index_col=0)
+df_sd_add = pd.read_csv('sd_for_90_add_batch0_800__events_design', index_col=0)
+
 df_mean_test = pd.read_csv("mean_for_50_sliced_200_events_test_design", index_col=0)
 df_sd_test = pd.read_csv("sd_for_50_sliced_200_events_test_design", index_col=0)
 
-df_mean.shape
-df_sd.shape
+print(df_mean.shape)
+print(df_sd.shape)
 
 design = pd.read_csv('sliced_VAH_090321.txt', delimiter = ' ')
 design.head()
-design.shape
+print(design.shape)
+
+design_add = pd.read_csv('add_design_122421.txt', delimiter = ' ')
+design_add.head()
 
 design_validation = pd.read_csv('sliced_VAH_090321_test.txt', delimiter = ' ')
 design_validation.shape
@@ -34,7 +39,7 @@ colnames = design.columns
 
 #drop tau_initial parameter for now because we keep it fixed
 design = design.drop(labels='tau_initial', axis=1)
-design.shape
+print(design.shape)
 
 design_validation = design_validation.drop(labels='tau_initial', axis=1)
 colnames = colnames[0:-1]
@@ -80,6 +85,9 @@ for i in exp_data.columns:
 df_mean = df_mean[exp_label]
 df_sd = df_sd[exp_label]
 
+df_mean_add = df_mean_add[exp_label]
+df_sd_add = df_sd_add[exp_label]
+
 df_mean_test = df_mean_test[exp_label]
 df_sd_test = df_sd_test[exp_label]
 
@@ -96,6 +104,9 @@ print(f'Last item on the selected observable is {selected_observables[-1]}')
 
 df_mean = df_mean[selected_observables]
 df_sd = df_sd[selected_observables]
+
+df_mean_add = df_mean_add[selected_observables]
+df_sd_add = df_sd_add[selected_observables]
 
 df_mean_test = df_mean_test[selected_observables]
 df_sd_test = df_sd_test[selected_observables]
@@ -118,10 +129,17 @@ df_sd = df_sd.drop(index=drop_index)
 df_mean_test = df_mean_test.drop(index=drop_index_vl)
 df_sd_test = df_sd_test.drop(index=drop_index_vl)
 
-# df_mean.shape
-# theta.shape
-# theta.head()
+# Additional
+drop_index_add = np.array([10, 17, 27, 35, 49, 58])
+theta_add = design_add.drop(index=drop_index_add)
+df_mean_add = df_mean_add.drop(index=drop_index_add)
+df_sd_add = df_sd_add.drop(index=drop_index_add)
 
+frames = [theta, theta_add]
+theta = pd.concat(frames)
+
+frames = [df_mean, df_mean_add]
+df_mean = pd.concat(frames)
 
 # Remove nas
 theta_np = theta.to_numpy()
@@ -216,6 +234,7 @@ for o in uniquex:
     if i > 3:
         i = 0
         j = 1
+plt.show()
 
 fig, axis = plt.subplots(4, 2, figsize=(15, 15))
 i, j = 0, 0
@@ -227,7 +246,7 @@ for o in uniquex:
     if i > 3:
         i = 0
         j = 1
-
+plt.show()
 # Check error distribution
 mu = 0
 variance = 1
@@ -246,7 +265,7 @@ for o in uniquex:
     if i > 3:
         i = 0
         j = 1
-
+plt.show()
 # Check relative error
 fig, axis = plt.subplots(4, 2, figsize=(15, 15))
 i, j = 0, 0
@@ -259,7 +278,7 @@ for o in uniquex:
     if i > 3:
         i = 0
         j = 1
-
+plt.show()
 # Check training
 pred_tr = emu_tr.predict(x=x_np, theta=theta_np)
 pred_tr_mean = pred_tr.mean()
@@ -467,4 +486,4 @@ theta_in = pd.DataFrame(np.round(theta[in_id, :], 4), columns = ['Pb_Pb',
                                                                  'Width_peak',
                                                                  'Asym_peak',
                                                                  'R'])
-theta_in.to_csv(r'add_design_122421.txt', header=True, index=None, sep=' ', mode='a')
+theta_in.to_csv(r'add_design_122721.txt', header=True, index=None, sep=' ', mode='a')
