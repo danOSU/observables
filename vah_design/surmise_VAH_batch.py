@@ -12,14 +12,20 @@ from scipy import stats
 
 df_mean = pd.read_csv('mean_for_300_sliced_200_events_design', index_col=0)
 df_sd = pd.read_csv('sd_for_300_sliced_200_events_design', index_col=0)
-
 df_mean_test = pd.read_csv("mean_for_50_sliced_200_events_test_design", index_col=0)
 df_sd_test = pd.read_csv("sd_for_50_sliced_200_events_test_design", index_col=0)
+
+df_mean_b0 = pd.read_csv('mean_for_90_add_batch0_800_events_design', index_col=0)
+df_sd_b0 = pd.read_csv('sd_for_90_add_batch0_800_events_design', index_col=0)
+df_mean_b1 = pd.read_csv('mean_for_90_add_batch1_800_events_design', index_col=0)
+df_sd_b1 = pd.read_csv('sd_for_90_add_batch1_800_events_design', index_col=0)
 
 df_mean.shape
 df_sd.shape
 
 design = pd.read_csv('sliced_VAH_090321.txt', delimiter = ' ')
+design_b0 = pd.read_csv('add_design_122421.txt', delimiter = ' ')
+design_b1 = pd.read_csv('add_design_122721.txt', delimiter = ' ')
 design.head()
 design.shape
 
@@ -77,6 +83,12 @@ for i in exp_data.columns:
 df_mean = df_mean[exp_label]
 df_sd = df_sd[exp_label]
 
+df_mean_b0 = df_mean_b0[exp_label]
+df_sd_b0 = df_sd_b0[exp_label]
+
+df_mean_b1 = df_mean_b1[exp_label]
+df_sd_b1 = df_sd_b1[exp_label]
+
 df_mean_test = df_mean_test[exp_label]
 df_sd_test = df_sd_test[exp_label]
 
@@ -97,6 +109,12 @@ df_sd = df_sd[selected_observables]
 
 df_mean_test = df_mean_test[selected_observables]
 df_sd_test = df_sd_test[selected_observables]
+
+df_mean_b0 = df_mean_b0[selected_observables]
+df_sd_b0 = df_sd_b0[selected_observables]
+
+df_mean_b1 = df_mean_b1[selected_observables]
+df_sd_b1 = df_sd_b1[selected_observables]
 
 #print(f'Shape of the constrained simulation output {df_mean.shape}')
 
