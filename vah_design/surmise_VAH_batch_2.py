@@ -5,57 +5,37 @@ from surmise.emulation import emulator
 from surmise.calibration import calibrator
 import scipy.stats as sps
 from scipy import stats
+import random
 
-#import pyximport
-#pyximport.install(setup_args={"include_dirs":np.get_include()},
-#                  reload_support=True)
+df_mean_b0 = pd.read_csv('mean_for_90_add_batch0_800_events_design', index_col=0)
+design_b0 = pd.read_csv('add_design_122421.txt', delimiter = ' ')
+drop_index_b0 = np.array([10, 17, 27, 35, 49, 58])
+design_b0 = design_b0.drop(index=drop_index_b0)
+df_mean_b0 = df_mean_b0.drop(index=drop_index_b0)
+print(df_mean_b0.shape)
 
-df_mean = pd.read_csv('mean_for_300_sliced_200_events_design', index_col=0)
-df_sd = pd.read_csv('sd_for_300_sliced_200_events_design', index_col=0)
+df_mean_b1 = pd.read_csv('mean_for_90_add_batch1_800_events_design', index_col=0)
+design_b1 = pd.read_csv('add_design_122721.txt', delimiter = ' ')
+drop_index_b1 = np.array([0, 3, 6, 16, 18, 20, 26, 33, 37, 41, 48])
+design_b1 = design_b1.drop(index=drop_index_b1)
+df_mean_b1 = df_mean_b1.drop(index=drop_index_b1)
+print(df_mean_b1.shape)
 
-df_mean_test = pd.read_csv("mean_for_50_sliced_200_events_test_design", index_col=0)
-df_sd_test = pd.read_csv("sd_for_50_sliced_200_events_test_design", index_col=0)
+frames = [df_mean_b0, df_mean_b1]
+feval = pd.concat(frames)
 
-df_mean.shape
-df_sd.shape
+frames = [design_b0, design_b1]
+theta = pd.concat(frames)
 
-design = pd.read_csv('sliced_VAH_090321.txt', delimiter = ' ')
-design.head()
-design.shape
-
-design_validation = pd.read_csv('sliced_VAH_090321_test.txt', delimiter = ' ')
-
-colnames = design.columns
-
-#drop tau_initial parameter for now because we keep it fixed
-design = design.drop(labels='tau_initial', axis=1)
-design.shape
-
-design_validation = design_validation.drop(labels='tau_initial', axis=1)
-colnames = colnames[0:-1]
+print(feval.shape)
+print(theta.shape)
 
 # Read the experimental data
 exp_data = pd.read_csv('PbPb2760_experiment', index_col=0)
 y_mean = exp_data.to_numpy()[0, ]
 y_sd = exp_data.to_numpy()[1, ]
 
-# Get the initial 200 parameter values
-theta = design.head(300)
-theta.head()
-
-theta_validation = design_validation.iloc[0:50]
-theta_validation.shape
-
-plt.scatter(theta.values[:,0], df_mean.values[:,0])
-plt.show()
-
-fig, axis = plt.subplots(3, 5, figsize=(10, 10))
-theta.hist(ax=axis)
-plt.show()
-
 colname_exp = exp_data.columns
-#colname_sim = df_mean.columns
-#colname_theta = theta.columns
 
 # Gather what type of experimental data do we have.
 exp_label = []
@@ -74,63 +54,23 @@ for i in exp_data.columns:
 
 
 # Only keep simulation data that we have corresponding experimental data
-df_mean = df_mean[exp_label]
-df_sd = df_sd[exp_label]
-
-df_mean_test = df_mean_test[exp_label]
-df_sd_test = df_sd_test[exp_label]
-
-df_mean.head()
+feval = feval[exp_label]
 
 selected_observables = exp_label[0:-32]
-
 x_np = np.column_stack((x[0:-32], x_id[0:-32]))
 x_np = x_np.astype('object')
-#x_np[:, 1] = x_np[:, 1].astype(int)
 y_mean = y_mean[0:-32]
 y_sd = y_sd[0:-32]
 
 #print(f'Last item on the selected observable is {selected_observables[-1]}')
-
-df_mean = df_mean[selected_observables]
-df_sd = df_sd[selected_observables]
-
-df_mean_test = df_mean_test[selected_observables]
-df_sd_test = df_sd_test[selected_observables]
-
-#print(f'Shape of the constrained simulation output {df_mean.shape}')
-
-# Remove bad designs
-
-drop_index = np.array([19, 23, 31, 32, 71, 91, 92, 98, 129, 131, 146, 162, 171, 174, 184, 190, 194, 195, 198])
-drop_index_vl = np.array([29, 35, ])
-theta = theta.drop(index=drop_index)
-theta.head()
-
-theta_validation = theta_validation.drop(index=drop_index_vl)
-theta_validation.head()
-
-df_mean = df_mean.drop(index=drop_index)
-df_sd = df_sd.drop(index=drop_index)
-
-df_mean_test = df_mean_test.drop(index=drop_index_vl)
-df_sd_test = df_sd_test.drop(index=drop_index_vl)
-
-df_mean.shape
-theta.shape
-theta.head()
-
+feval = feval[selected_observables]
+print(feval.shape)
 
 # Remove nas
-theta_np = theta.to_numpy()
-f_np = df_mean.to_numpy()
+theta = theta.to_numpy()
+feval = feval.to_numpy()
 
-theta_test = theta_validation.to_numpy()
-f_test = df_mean_test.to_numpy()
-#theta_np = theta_np[-which_nas, :]
-#f_np = f_np[-which_nas, :]
-f_np = np.transpose(f_np)
-f_test = np.transpose(f_test)
+feval = np.transpose(feval)
 
 # Observe simulation outputs in comparison to real data
 fig, axis = plt.subplots(4, 2, figsize=(15, 15))
@@ -139,8 +79,8 @@ k = 0
 uniquex = np.unique(x_np[:, 0])
 for u in uniquex:
     whereu = u == x_np[:, 0]
-    for i in range(f_np.shape[1]):
-        axis[j, k].plot(x_np[whereu, 1].astype(int), f_np[whereu, i], zorder=1, color='grey')
+    for i in range(feval.shape[1]):
+        axis[j, k].plot(x_np[whereu, 1].astype(int), feval[whereu, i], zorder=1, color='grey')
     axis[j, k].scatter(x_np[whereu, 1].astype(int), y_mean[whereu], zorder=2, color='red')
     axis[j, k].set_ylabel(u)
     if j == 3:
@@ -150,31 +90,43 @@ for u in uniquex:
         j += 1
 plt.show()
 
+n = feval.shape[1]
+n_test = 40
+n_train = n - n_test
 
-#f_test = np.log10(f_test + 1)
-#f_np = np.log10(f_np + 1)
+array = np.arange(0, n)
+random.shuffle(array)
+tr_id = array[0:n_train]
+test_id = array[n_train:n]
+theta_tr = theta[tr_id, :]
+theta_test = theta[test_id, :]
+
+feval_tr = feval[:, tr_id]
+feval_test = feval[:, test_id]
+
+feval_tr = np.log(feval_tr + 0.1)
+feval_test = np.log(feval_test + 0.1)
 # Build an emulator
 emu_tr = emulator(x=x_np,
-                   theta=theta_np,
-                   f=f_np,
-                   method='PCGPwM',
-                   args={'epsilon': 0.01})
+                  theta=theta_tr,
+                  f=feval_tr,
+                  method='PCGPwM',
+                  args={'epsilon': 0.01})
 
 pred_test = emu_tr.predict(x=x_np, theta=theta_test)
 pred_test_mean = pred_test.mean()
 pred_test_var = pred_test.var()
 
-
 # Check error
-errors_test = (pred_test_mean - f_test).flatten()
-sst = np.sum((f_test.flatten() - np.mean(f_test.flatten()))**2)
+errors_test = (pred_test_mean - feval_test).flatten()
+sst = np.sum((feval_test.flatten() - np.mean(feval_test.flatten()))**2)
 print('MSE test=', np.mean(errors_test**2))
 print('rsq test=', 1 - np.sum(errors_test**2)/sst)
 
 rsq = []
 for i in range(pred_test_mean.shape[0]):
-    sse = np.sum((pred_test_mean[i, :] - f_test[i, :])**2)
-    sst = np.sum((f_test[i, :] - np.mean(f_test[i, :]))**2)
+    sse = np.sum((pred_test_mean[i, :] - feval_test[i, :])**2)
+    sst = np.sum((feval_test[i, :] - np.mean(feval_test[i, :]))**2)
     rsq.append(1 - sse/sst)
     print(selected_observables[i])
 
@@ -185,7 +137,7 @@ plt.show()
 
 # Observe test prediction
 fig = plt.figure()
-plt.scatter(f_test, pred_test_mean, alpha=0.5)
+plt.scatter(feval_test, pred_test_mean, alpha=0.5)
 plt.plot(range(0, 5), range(0, 5), color='red')
 plt.xlabel('Simulator outcome (test)')
 plt.ylabel('Emulator prediction (test)')
@@ -195,19 +147,19 @@ fig, axis = plt.subplots(4, 2, figsize=(15, 15))
 i, j = 0, 0
 for o in uniquex:
     idx = o == x_np[:, 0]
-    axis[i, j].scatter(f_test[idx, :], pred_test_mean[idx, :], alpha=0.5)
-    if np.max(pred_test_mean[idx, :]) > np.max(f_test[idx, :]):
+    axis[i, j].scatter(feval_test[idx, :], pred_test_mean[idx, :], alpha=0.5)
+    if np.max(pred_test_mean[idx, :]) > np.max(feval_test[idx, :]):
         xlu = np.ceil(np.max(pred_test_mean[idx, :]))
     else:
-        xlu = np.ceil(np.max(f_test[idx, :]))
-    if np.min(pred_test_mean[idx, :]) > np.min(f_test[idx, :]):
-        xll = np.floor(np.min(f_test[idx, :]))
+        xlu = np.ceil(np.max(feval_test[idx, :]))
+    if np.min(pred_test_mean[idx, :]) > np.min(feval_test[idx, :]):
+        xll = np.floor(np.min(feval_test[idx, :]))
     else:
         xll = np.floor(np.min(pred_test_mean[idx, :]))
     axis[i, j].plot(range(int(xll), int(xlu)+1), range(int(xll), int(xlu)+1), color='red')
 
-    sse = np.sum((pred_test_mean[idx, :] - f_test[idx, :])**2)
-    sst = np.sum((f_test[idx, :] - np.mean(f_test[idx, :]))**2)
+    sse = np.sum((pred_test_mean[idx, :] - feval_test[idx, :])**2)
+    sst = np.sum((feval_test[idx, :] - np.mean(feval_test[idx, :]))**2)
     #rsq.append(1 - sse/sst)
     axis[i, j].set_title('r2:'+ str(np.round(1 - sse/sst, 2)))
     print(1 - sse/sst)
@@ -220,7 +172,7 @@ fig, axis = plt.subplots(4, 2, figsize=(15, 15))
 i, j = 0, 0
 for o in uniquex:
     idx = o == x_np[:, 0]
-    e = (pred_test_mean[idx, :] - f_test[idx, :]).flatten()
+    e = (pred_test_mean[idx, :] - feval_test[idx, :]).flatten()
     axis[i, j].hist(e, bins=25)
     i += 1
     if i > 3:
@@ -237,7 +189,7 @@ fig, axis = plt.subplots(4, 2, figsize=(15, 15))
 i, j = 0, 0
 for o in uniquex:
     idx = o == x_np[:, 0]
-    e = ((pred_test_mean[idx, :] - f_test[idx, :])/np.sqrt(pred_test_var[idx, :])).flatten()
+    e = ((pred_test_mean[idx, :] - feval_test[idx, :])/np.sqrt(pred_test_var[idx, :])).flatten()
     axis[i, j].hist(e, bins=25, density=True)
     axis[i, j].plot(x, stats.norm.pdf(x, mu, sigma), color='red')
     axis[i, j].set_title(o)
@@ -252,7 +204,7 @@ fig, axis = plt.subplots(4, 2, figsize=(15, 15))
 i, j = 0, 0
 for o in uniquex:
     idx = o == x_np[:, 0]
-    e = ((pred_test_mean[idx, :] - f_test[idx, :])/f_test[idx, :]).flatten()
+    e = ((pred_test_mean[idx, :] - feval_test[idx, :])/feval_test[idx, :]).flatten()
     axis[i, j].hist(e, bins=25, density=True)
     axis[i, j].set_title(o)
     i += 1
@@ -262,18 +214,18 @@ for o in uniquex:
 plt.show()
 
 # Check training
-pred_tr = emu_tr.predict(x=x_np, theta=theta_np)
+pred_tr = emu_tr.predict(x=x_np, theta=theta_tr)
 pred_tr_mean = pred_tr.mean()
 
 # Check error
-errors_tr = (pred_tr_mean - f_np).flatten()
-sst_tr = np.sum((f_np.flatten() - np.mean(f_np.flatten()))**2)
+errors_tr = (pred_tr_mean - feval_tr).flatten()
+sst_tr = np.sum((feval_tr.flatten() - np.mean(feval_tr.flatten()))**2)
 print('MSE train=', np.mean(errors_tr**2))
 print('rsq train=', 1 - np.sum(errors_tr**2)/sst_tr)
 
 # Observe test prediction
 fig = plt.figure()
-plt.scatter(f_np, pred_tr_mean, alpha=0.5)
+plt.scatter(feval_tr, pred_tr_mean, alpha=0.5)
 plt.plot(range(0, 3000), range(0, 3000), color='red')
 plt.xlabel('Simulator outcome (train)')
 plt.ylabel('Emulator prediction (train)')
@@ -287,9 +239,9 @@ x = np.linspace(mu - 3*sigma, mu + 3*sigma, 100)
 
 pred_test_var = pred_test.var()
 fig, axs = plt.subplots(1, 2, tight_layout=True)
-axs[0].hist((pred_test_mean-f_test).flatten())
+axs[0].hist((pred_test_mean-feval_test).flatten())
 # This should look like a standard normal
-axs[1].hist(((pred_test_mean-f_test)/np.sqrt(pred_test_var)).flatten(), density=True)
+axs[1].hist(((pred_test_mean-feval_test)/np.sqrt(pred_test_var)).flatten(), density=True)
 axs[1].plot(x, stats.norm.pdf(x, mu, sigma), color='red')
 axs[1].set_title(r'${(\hat{\mu}_{test} - \mu_{test})}/{\hat{\sigma}_{test}}$')
 plt.show()
@@ -416,7 +368,7 @@ obsvar = np.maximum(0.00001, 0.2*y_mean)
 #post = cal_1.predict(xcal_all)
 #rndm_m = post.rnd(s = 1000)
 
-f#ig, axis = plt.subplots(4, 3, figsize=(15, 15))
+#fig, axis = plt.subplots(4, 3, figsize=(15, 15))
 #for u_id, u in enumerate(u1):
 #m = 0
 
