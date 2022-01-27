@@ -15,27 +15,27 @@ design = design.drop(labels='tau_initial', axis=1)
 colnames = design.columns
 theta = design.head(300)
 drop_index = np.arange(0,280)# np.array([19, 23, 31, 32, 71, 91, 92, 98, 129, 131, 146, 162, 171, 174, 184, 190, 194, 195, 198])
-theta = theta.drop(index=drop_index)
-df_mean = df_mean.drop(index=drop_index)
-df_sd = df_sd.drop(index=drop_index)
+theta200 = theta.drop(index=drop_index)
+df_mean200 = df_mean.drop(index=drop_index)
+df_sd200 = df_sd.drop(index=drop_index)
 
 # A batch of 90 points with 800 events 
 df_mean_b0 = pd.read_csv('mean_for_90_add_batch0_800_events_design', index_col=0)
 df_sd_b0 = pd.read_csv('sd_for_90_add_batch0_800_events_design', index_col=0)
 design_b0 = pd.read_csv('add_design_122421.txt', delimiter = ' ')
 drop_index_b0 = np.array([10, 17, 27, 35, 49, 58])
-design_b0 = design_b0.drop(index=drop_index_b0)
-df_mean_b0 = df_mean_b0.drop(index=drop_index_b0)
-df_sd_b0 = df_sd_b0.drop(index=drop_index_b0)
+design800_b0 = design_b0.drop(index=drop_index_b0)
+df_mean800_b0 = df_mean_b0.drop(index=drop_index_b0)
+df_sd800_b0 = df_sd_b0.drop(index=drop_index_b0)
 
 # A batch of 90 points with 800 events 
 df_mean_b1 = pd.read_csv('mean_for_90_add_batch1_800_events_design', index_col=0)
 df_sd_b1 = pd.read_csv('sd_for_90_add_batch1_800_events_design', index_col=0)
 design_b1 = pd.read_csv('add_design_122721.txt', delimiter = ' ')
 drop_index_b1 = np.array([0, 3, 6, 16, 18, 20, 26, 33, 37, 41, 48])
-design_b1 = design_b1.drop(index=drop_index_b1)
-df_mean_b1 = df_mean_b1.drop(index=drop_index_b1)
-df_sd_b1 = df_sd_b1.drop(index=drop_index_b1)
+design800_b1 = design_b1.drop(index=drop_index_b1)
+df_mean800_b1 = df_mean_b1.drop(index=drop_index_b1)
+df_sd800_b1 = df_sd_b1.drop(index=drop_index_b1)
 
 # A batch of 90 points with 800 events 
 df_mean_b2 = pd.read_csv("mean_for_90_sliced_test_design_800_events_design", index_col=0)
@@ -44,9 +44,9 @@ design_b2 = pd.read_csv('sliced_VAH_090321_test.txt', delimiter = ' ')
 design_b2 = design_b2.drop(labels='tau_initial', axis=1)
 design_b2 = design_b2.iloc[0:90]
 drop_index_vl = np.array([29, 35, 76, 84, 87])
-design_b2 = design_b2.drop(index=drop_index_vl)
-df_mean_b2 = df_mean_b2.drop(index=drop_index_vl)
-df_sd_b2 = df_sd_b2.drop(index=drop_index_vl)
+design800_b2 = design_b2.drop(index=drop_index_vl)
+df_mean800_b2 = df_mean_b2.drop(index=drop_index_vl)
+df_sd800_b2 = df_sd_b2.drop(index=drop_index_vl)
 
 # Read the experimental data
 exp_data = pd.read_csv('PbPb2760_experiment', index_col=0)
@@ -70,10 +70,10 @@ for i in exp_data.columns:
     x.append(words[0])
 
 # Only keep simulation data that we have corresponding experimental data
-df_mean = df_mean[exp_label]
-df_mean_b0 = df_mean_b0[exp_label]
-df_mean_b1 = df_mean_b1[exp_label]
-df_mean_b2 = df_mean_b2[exp_label]
+df_mean200 = df_mean200[exp_label]
+df_mean800_b0 = df_mean800_b0[exp_label]
+df_mean800_b1 = df_mean800_b1[exp_label]
+df_mean800_b2 = df_mean800_b2[exp_label]
 
 selected_observables = exp_label[0:-32]
 
@@ -84,59 +84,53 @@ y_sd = y_sd[0:-32]
 
 #print(f'Last item on the selected observable is {selected_observables[-1]}')
 
-df_mean = df_mean[selected_observables]
-df_mean_b0 = df_mean_b0[selected_observables]
-df_mean_b1 = df_mean_b1[selected_observables]
-df_mean_b2 = df_mean_b2[selected_observables]
+df_mean200 = df_mean200[selected_observables]
+df_mean800_b0 = df_mean800_b0[selected_observables]
+df_mean800_b1 = df_mean800_b1[selected_observables]
+df_mean800_b2 = df_mean800_b2[selected_observables]
 
-df_sd = df_sd[selected_observables]
-df_sd_b0 = df_sd_b0[selected_observables]
-df_sd_b1 = df_sd_b1[selected_observables]
-df_sd_b2 = df_sd_b2[selected_observables]
+df_sd200 = df_sd200[selected_observables]
+df_sd800_b0 = df_sd800_b0[selected_observables]
+df_sd800_b1 = df_sd800_b1[selected_observables]
+df_sd800_b2 = df_sd800_b2[selected_observables]
 
 
-print(df_mean.shape)
-print(df_sd.shape)
-print(df_mean_b0.shape)
-print(df_sd_b0.shape)
-print(df_mean_b1.shape)
-print(df_sd_b1.shape)
-print(df_mean_b2.shape)
-print(df_sd_b2.shape)
+print(df_mean200.shape)
+print(df_sd200.shape)
+print(df_mean800_b0.shape)
+print(df_sd800_b0.shape)
+print(df_mean800_b1.shape)
+print(df_sd800_b1.shape)
+print(df_mean800_b2.shape)
+print(df_sd800_b2.shape)
 
-print('Total obs.:', df_mean.shape[0] + df_mean_b0.shape[0] + df_mean_b1.shape[0] + df_mean_b2.shape[0])
+print('Total obs.:', df_mean200.shape[0] + df_mean800_b0.shape[0] + df_mean800_b1.shape[0] + df_mean800_b2.shape[0])
 
-print(theta.shape)
-print(design_b0.shape)
-print(design_b1.shape)
-print(design_b2.shape)
+print(theta200.shape)
+print(design800_b0.shape)
+print(design800_b1.shape)
+print(design800_b2.shape)
 
-frames800 = [df_mean_b0, df_mean_b1, df_mean_b2]
-feval800 = pd.concat(frames800)
-sd800 = pd.concat([df_sd_b0, df_sd_b1, df_sd_b2])
+feval800 = pd.concat([df_mean800_b0, df_mean800_b1, df_mean800_b2])
+sd800 = pd.concat([df_sd800_b0, df_sd800_b1, df_sd800_b2])
+design800 = pd.concat([design800_b0, design800_b1, design800_b2])
+
 print(feval800.shape)
 print(sd800.shape)
-
-frames_design800 = [design_b0, design_b1, design_b2]
-design800 = pd.concat(frames_design800)
 print(design800.shape)
 
 # Split test using 800
 msk = np.random.rand(len(feval800)) < 0.8
-df_mean_train1 = feval800[msk]
-df_sd_train1 = feval800[msk]
-df_mean_test = feval800[~msk]
+df_mean_train800 = feval800[msk]
+df_sd_train800 = sd800[msk]
+design_train800 = design800[msk]
 
-design_mean_train1 = design800[msk]
+df_mean_test = feval800[~msk]
 theta_validation = design800[~msk]
 
-frames = [df_mean, df_mean_train1]
-feval = pd.concat(frames)
-sdframes = [df_sd, df_sd_train1]
-sdeval = pd.concat(sdframes)
-
-frames = [theta, design_mean_train1]
-theta = pd.concat(frames)
+feval = pd.concat([df_mean200, df_mean_train800])
+sdeval = pd.concat([df_sd200, df_sd_train800])
+theta = pd.concat([theta200, design_train800])
 
 # Final training data
 theta = theta.to_numpy()
@@ -154,7 +148,7 @@ feval_test = df_mean_test.to_numpy()
 print('test shape (feval):', feval_test.shape)
 print('test shape (feval):', theta_test.shape)
 
-assert feval.shape[0] + feval_test.shape[0] == df_mean.shape[0] + df_mean_b0.shape[0] + df_mean_b1.shape[0] + df_mean_b2.shape[0]
+assert feval.shape[0] + feval_test.shape[0] == df_mean200.shape[0] + df_mean800_b0.shape[0] + df_mean800_b1.shape[0] + df_mean800_b2.shape[0]
 
 feval = np.transpose(feval)
 feval_test = np.transpose(feval_test)
@@ -180,8 +174,9 @@ plt.show()
 
 #feval_test = np.log10(feval_test + 0.1)
 #feval = np.log10(feval + 0.1)
-
-print((feval.var(1))/((sdeval**2).mean(0)))
+var_mean = (sdeval**2).mean(0)
+feval_var = feval.var(axis=1)
+print((feval_var)/(var_mean))
 print('The fact that these values are quite small make me feel like going forward is not a good idea.')
 
 # Build an emulator
