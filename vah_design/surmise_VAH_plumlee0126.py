@@ -128,21 +128,6 @@ feval = np.transpose(feval)
 sdeval = np.transpose(sdeval)
 feval_test = np.transpose(feval_test)
 
-# Build another emulator
-emu_tr = emulator(x=x_np,
-                   theta=theta,
-                   f=feval,
-                   method='PCSK',
-                   args={'epsilonPC': 0.1, #this does not mean full errors
-                         'simsd': sdeval})
-pred_test = emu_tr.predict(x=x_np, theta=theta_test)
-pred_test_mean = pred_test.mean()
-pred_test_var = pred_test.var()
-
-sse = np.sum((pred_test_mean - feval_test) ** 2,1)
-sst = np.sum((feval_test.T - np.mean(feval_test,1)) ** 2,0)
-rsqsk = 1-sse/sst
-
 
 # Build an emulator
 emu_tr = emulator(x=x_np,
@@ -158,6 +143,21 @@ sse = np.sum((pred_test_mean - feval_test) ** 2,1)
 sst = np.sum((feval_test.T - np.mean(feval_test,1)) ** 2,0)
 rsqwM = 1-sse/sst
 
+
+# Build another emulator
+emu_tr = emulator(x=x_np,
+                   theta=theta,
+                   f=feval,
+                   method='PCSK',
+                   args={'epsilonPC': 0.1, #this does not mean full errors
+                         'simsd': sdeval})
+pred_test = emu_tr.predict(x=x_np, theta=theta_test)
+pred_test_mean = pred_test.mean()
+pred_test_var = pred_test.var()
+
+sse = np.sum((pred_test_mean - feval_test) ** 2,1)
+sst = np.sum((feval_test.T - np.mean(feval_test,1)) ** 2,0)
+rsqsk = 1-sse/sst
 
 plt.plot(rsqwM, rsqwM, 'k-', lw=2)
 plt.plot(rsqsk, rsqsk, 'k-', lw=2)
