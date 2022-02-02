@@ -178,8 +178,8 @@ r2guess = fv/(vbar+fv+fpv)
 plt.scatter(rsqsk,r2guess)
 plt.plot(r2guess, r2guess, 'k-', lw=2)
 plt.plot(rsqsk, rsqsk, 'k-', lw=2)
-plt.ylabel('PCSK rsq')
-plt.xlabel('predicted rsq')
+plt.xlabel('PCSK rsq')
+plt.ylabel('predicted rsq')
 plt.show()
 #this shows this is a decent approximation, but we are overestimating the error.
 
