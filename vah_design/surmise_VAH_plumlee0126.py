@@ -102,7 +102,7 @@ sd800 = pd.concat([df_sd800_b0, df_sd800_b1, df_sd800_b2])
 design800 = pd.concat([design800_b0, design800_b1, design800_b2])
 
 # Split test using 800
-msk = ((np.random.rand(len(feval800)) < 0.8)  +
+msk = ((np.random.rand(len(feval800)) < 0.6)  +
        (np.arange(len(feval800)) > (df_mean800_b0.shape[0] + df_mean800_b1.shape[0])))
 df_mean_train800 = feval800[msk]
 df_sd_train800 = sd800[msk]
@@ -133,7 +133,7 @@ emu_tr = emulator(x=x_np,
                    theta=theta,
                    f=feval,
                    method='PCSK',
-                   args={'epsilonPC': 3, #this does not mean full errors
+                   args={'epsilonPC': 0.1, #this does not mean full errors
                          'simsd': sdeval})
 pred_test = emu_tr.predict(x=x_np, theta=theta_test)
 pred_test_mean = pred_test.mean()
@@ -149,7 +149,7 @@ emu_tr = emulator(x=x_np,
                    theta=theta,
                    f=feval,
                    method='PCGPwM',
-                   args={'epsilonPC': 3})
+                   args={'epsilonPC':  0.1})
 pred_test = emu_tr.predict(x=x_np, theta=theta_test)
 pred_test_mean = pred_test.mean()
 pred_test_var = pred_test.var()
@@ -165,3 +165,21 @@ plt.scatter(rsqwM,rsqsk)
 plt.xlabel('PCGPwM rsq')
 plt.ylabel('PCSK rsq')
 plt.show()
+
+# say we are choosing these points.
+
+# events = 2400 guess on r2
+fv = pred_test.mean().var(1)
+fpv = pred_test.var().mean(1)
+vbar = np.square(sdeval).mean(1)
+
+#
+r2guess = fv/(vbar+fv+fpv)
+plt.scatter(rsqsk,r2guess)
+plt.plot(r2guess, r2guess, 'k-', lw=2)
+plt.plot(rsqsk, rsqsk, 'k-', lw=2)
+plt.ylabel('PCSK rsq')
+plt.xlabel('predicted rsq')
+plt.show()
+#this shows this is a decent approximation, but we are overestimating the error.
+
