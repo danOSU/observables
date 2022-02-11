@@ -8,14 +8,19 @@ class simulation:
     Attributes
     ----------
     obs : Pandas DataFrame
-        Final simulation output. [n_designs x n_observables]
+        final simulation output. [n_designs x n_observables]
     obs_sd: Pandas DataFrame
-        Final simulation output standard deviation. [n_designs x n_observables]
+        final simulation output standard deviation. [n_designs x n_observables]
     design : Pandas DataFrame
-        Design matrix. [n_designs x n_model_parameters]
+        design matrix. [n_designs x n_model_parameters]
     events : Pandas DataFrame
-        Number of successful events per each  design. [n_designs,2]
+        number of successful events per each  design. [n_designs,2]
 
+    Methods
+    -------
+    combine(allowed_failure_percentage):
+        combine events, design, observable mean and error into a single DataFrame
+        taking into account the allowed failure percentage of events per design.
 
     """
     def __init__(self, sim_path, sd_path, des_path, neve_path):
@@ -48,3 +53,30 @@ class simulation:
         # Drop last row because we did not consider the last design point when
         # gathering our results. This was by mistake.
         self.events = self.events[:-1]
+
+    def combine(self, allowed_failure_percentage=100):
+        """
+        Concatanate events, design, observable, observable standard deviation into a single
+        Dataframe along rows and only keep the simulations which has events above the specified
+        threshold.
+
+        Parametrs:
+        ---------
+        allowed_failure_percentage : float, optional
+            threshold for maximum allowed number of event failures to keep
+            in combined simulation data. (Default is 100.0, combine all designs)
+
+        Returns:
+        -------
+        com_df: Pandas Dataframe
+            combined dataframe that has events, design, observable
+            mean and standard deviation
+        """
+        if allowed_failure_percentage >= 0 and allowed_failure_percentage <= 100:
+            perc = allowed_failure_percentage
+        else:
+            raise Exception("Error, Percentage has to be between 0 and 100")
+        obs_er = self.obs_sd.add_prefix('sd_')
+        com_df = pd.concat([self.events, self.design, self.obs, obs_er], axis=1)
+        com_df = com_df[com_df['nevents']>=(max(com_df.nevents)*(100-perc)/100)]
+        return com_df
