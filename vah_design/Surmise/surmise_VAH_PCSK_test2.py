@@ -2,14 +2,11 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from surmise.emulation import emulator
-from surmise.calibration import calibrator
-import scipy.stats as sps
-from scipy import stats
+
 
 import pyximport
 pyximport.install(setup_args={"include_dirs":np.get_include()},
                   reload_support=True)
-
 
 # Initial data set of 300 points with 200 events
 df_mean = pd.read_csv('../simulation_data/mean_for_300_sliced_200_events_design', index_col=0)
@@ -108,25 +105,19 @@ df_sd_b3 = df_sd_b3[selected_observables]
 
 print('Total obs.:', df_mean.shape[0] + df_mean_b0.shape[0] + df_mean_b1.shape[0] + df_mean_b2.shape[0] + df_mean_b3.shape[0])
 
+# Split test using 1600
+msk = (np.random.rand(len(df_mean_b3)) < 0.65)
 
-feval_add = pd.concat([df_mean_b0, df_mean_b1, df_mean_b2, df_mean_b3])
-sd_add = pd.concat([df_sd_b0, df_sd_b1, df_sd_b2, df_sd_b3])
-design_add = pd.concat([design_b0, design_b1, design_b2, design_b3])
+feval_add_train = df_mean_b3[msk]
+sd_add_train = df_sd_b3[msk]
+design_add_train = design_b3[msk]
 
-# Split test using 800
-msk = ((np.random.rand(len(feval_add)) < 0.6)  +
-       (np.arange(len(feval_add)) > (df_mean_b0.shape[0] + df_mean_b1.shape[0])))
+df_mean_test = df_mean_b3[~msk]
+theta_validation = design_b3[~msk]
 
-feval_add_train = feval_add[msk]
-sd_add_train = sd_add[msk]
-design_add_train = design_add[msk]
-
-df_mean_test = feval_add[~msk]
-theta_validation = design_add[~msk]
-
-feval = pd.concat([df_mean, feval_add_train])
-sdeval = pd.concat([df_sd, sd_add_train])
-theta = pd.concat([theta, design_add_train])
+feval = pd.concat([df_mean, df_mean_b0, df_mean_b1, df_mean_b2, feval_add_train])
+sdeval = pd.concat([df_sd, df_sd_b0, df_sd_b1, df_sd_b2, sd_add_train])
+theta = pd.concat([theta, design_b0, design_b1, design_b2, design_add_train])
 
 # Final training/test data
 theta = theta.to_numpy()
@@ -135,21 +126,27 @@ sdeval = sdeval.to_numpy()
 theta_test = theta_validation.to_numpy()
 feval_test = df_mean_test.to_numpy()
 
-#assert feval.shape[0] + feval_test.shape[0] == df_mean200.shape[0] + df_mean800_b0.shape[0] + df_mean800_b1.shape[0] + df_mean800_b2.shape[0]
+assert feval.shape[0] == df_mean.shape[0] + df_mean_b0.shape[0] + df_mean_b1.shape[0] + df_mean_b2.shape[0] + feval_add_train.shape[0]
 
 feval = np.transpose(feval)
 sdeval = np.transpose(sdeval)
 feval_test = np.transpose(feval_test)
 
-
-
-# Build another emulator
-emu_tr = emulator(x=x_np,
-                   theta=theta,
-                   f=feval,
-                   method='PCSK',
-                   args={'epsilonPC': 0.1, #this does not mean full errors
-                         'simsd': sdeval})
+SK = True
+if SK:
+    emu_tr = emulator(x=x_np,
+                       theta=theta,
+                       f=feval,
+                       method='PCSK',
+                       args={'epsilonPC': 0.1, #this does not mean full errors
+                             'simsd': sdeval})
+else:
+    emu_tr = emulator(x=x_np,
+                       theta=theta,
+                       f=feval,
+                       method='PCGPwM',
+                       args={'epsilon': 0.01,
+                             'hypregmean': -16})
 pred_test = emu_tr.predict(x=x_np, theta=theta_test)
 pred_test_mean = pred_test.mean()
 pred_test_var = pred_test.var()
