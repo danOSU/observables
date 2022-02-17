@@ -78,5 +78,8 @@ class simulation:
             raise Exception("Error, Percentage has to be between 0 and 100")
         obs_er = self.obs_sd.add_prefix('sd_')
         com_df = pd.concat([self.events, self.design, self.obs, obs_er], axis=1)
+        throw_designs = com_df[com_df['nevents']<(max(com_df.nevents)*(100-perc)/100)].design.values
+        print(f'Designs that have more that {perc} failure event rate \n {throw_designs}')
         com_df = com_df[com_df['nevents']>=(max(com_df.nevents)*(100-perc)/100)]
+        #throw_designs = com_df[com_df['nevents']<(max(com_df.nevents)*(100-perc)/100)]
         return com_df
