@@ -133,13 +133,16 @@ u, s, vh = np.linalg.svd(SS.fit_transform(y_train), full_matrices=True)
 print(f'shape of u {u.shape} shape of s {s.shape} shape of vh {vh.shape}')
 
 # How many PCs to keep?
-npc = 10 # number of PCs
+npc = 110 # number of PCs
 # print the explained raito of variance
 # https://stats.stackexchange.com/questions/2691/making-sense-of-principal-component-analysis-eigenvectors-eigenvalues
 fig, (ax1, ax2) = plt.subplots(1,2,figsize=(7,4))
 #importance = pca_analysis.explained_variance_
-importance = np.square(s[:npc]/math.sqrt(u.shape[0]-1))
+importance = np.square(s/math.sqrt(u.shape[0]-1))
 cumulateive_importance = np.cumsum(importance)/np.sum(importance)
+
+[c_id for c_id, c in enumerate(cumulateive_importance) if c > 0.99]
+
 idx = np.arange(1,1+len(importance))
 ax1.bar(idx,importance)
 ax1.set_xlabel("PC index")
