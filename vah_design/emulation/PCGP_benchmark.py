@@ -11,7 +11,7 @@ import numpy as np
 import time
 from split_data import generate_split_data
 from surmise.emulation import emulator
-from plotting import plot_UQ
+from plotting import plot_UQ, plot_R2
 import pyximport
 pyximport.install(setup_args={"include_dirs":np.get_include()},
                   reload_support=True)
@@ -22,7 +22,7 @@ pyximport.install(setup_args={"include_dirs":np.get_include()},
 seconds_st = time.time()
 
 # Note: Here we can create different funcs to split data into training and test
-f_train, f_test, theta_train, theta_test = generate_split_data()
+f_train, f_test, theta_train, theta_test, sd_train, sd_test = generate_split_data()
 
 print(f_train.shape)
 print(f_test.shape)
@@ -42,7 +42,9 @@ pred_test = emu_tr.predict(x=x_np, theta=theta_test)
 pred_test_mean = pred_test.mean()
 pred_test_var = pred_test.var()
 
+# Plotting diagnostics
 plot_UQ(f_test, pred_test_mean.T, np.sqrt(pred_test_var.T), method='PCGP')
+plot_R2(pred_test_mean, f_test.T)
 # print(emu_tr._info['emulist'])
 
 seconds_end = time.time()

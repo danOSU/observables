@@ -81,9 +81,12 @@ def generate_split_data():
         exp_label.append(words[0] + '_['+words[1])
     
     # Only keep simulation data that we have corresponding experimental data
+    sd_exp_label = ['sd_' + e for e in exp_label]
     f_train = np.array(f_train[exp_label])
     f_test = np.array(f_test[exp_label])
+    f_er_train = np.array(f_er_train[sd_exp_label])
+    f_er_test = np.array(f_er_test[sd_exp_label])
     theta_train = np.array(theta_train)
     theta_test = np.array(theta_test)
     
-    return f_train, f_test, theta_train, theta_test
+    return f_train, f_test, theta_train, theta_test, f_er_train, f_er_test

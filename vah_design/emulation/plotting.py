@@ -123,3 +123,17 @@ def plot_UQ(f, fhat, sigmahat, method='PCGP'):
         fig.suptitle(obs_tex_labels[obs])
         plt.tight_layout()
         plt.savefig(f'{method}/{obs}_emu_sim.png', dpi=200)
+        plt.show()
+
+
+def plot_R2(fhat, f):
+    rsq = []
+    for i in range(fhat.shape[0]):
+        sse = np.sum((fhat[i, :] - f[i, :])**2)
+        sst = np.sum((f[i, :] - np.mean(f[i, :]))**2)
+        rsq.append(1 - sse/sst)
+
+    plt.scatter(np.arange(fhat.shape[0]), rsq)
+    plt.xlabel('observables')
+    plt.ylabel(r'test $r^2$')
+    plt.show()
