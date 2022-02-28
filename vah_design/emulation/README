@@ -1,0 +1,5 @@
+1) surmise's developsk branch has PCGPR (Dan's emulator) and PCSK (Stochastic Kriging) in addition to PCGPwM
+2) To be able to run benchmark scripts, clone surmise, and include the paths to the repo to your python console
+3) benchmark_surmise.py implements PCGPwM, PCGPR, and PCSK using usual PCA
+4) PCSK_benchmark_weighted.py and PCGPR_benchmark_weighted.py are designed to run different combinations of PCs.
+

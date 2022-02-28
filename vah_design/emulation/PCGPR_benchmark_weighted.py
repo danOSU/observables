@@ -6,7 +6,8 @@ Created on Fri Feb 25 17:29:55 2022
 @author: ozgesurer
 """
 import os
-import pickle
+import dill as pickle
+from sklearn.preprocessing import StandardScaler
 import numpy as np
 import time
 from split_data import generate_split_data
@@ -14,7 +15,7 @@ from surmise.emulation import emulator
 from plotting import plot_UQ, plot_R2
 
 ####################################################
-# Note: This script takes on avg. 460 sec.
+# Note: This script takes on avg. 11348 sec.
 ####################################################
 seconds_st = time.time()
 
@@ -32,13 +33,36 @@ prior_dict = {'min': prior_min, 'max': prior_max}
 x_np = np.arange(0, f_train.shape[1])[:, None]
 x_np = x_np.astype('object')
 
-emu_tr = emulator(x=x_np,
-                  theta=theta_train,
-                  f=f_train.T,
-                  method='PCGPR',
-                  args={'epsilon': 0.1,
-                        'prior': prior_dict})
+####################################################
+# Construct your own PCA-here independent columns
+SS = StandardScaler(copy=True)
+fs = SS.fit_transform(f_train)
+U = fs
+S = np.ones(fs.shape[1])
+standardpcinfo = {'U': U,
+                  'S': S,
+                  'V': np.diag(S)}
+####################################################
 
+is_train = False
+emu_path = 'VAH_PCGPR_ind.pkl'
+
+if (os.path.exists(emu_path)) and (is_train==False):
+    print('Saved emulators exists and overide is prohibited')
+    with open(emu_path, 'rb') as file:
+        emu_tr = pickle.load(file)    
+else:
+    emu_tr = emulator(x=x_np,
+                      theta=theta_train,
+                      f=f_train.T,
+                      method='PCGPR',
+                      args={'epsilon': 0.1,
+                            'prior': prior_dict,
+                            'standardpcinfo': standardpcinfo})
+
+    if (is_train==True) or not(os.path.exists(emu_path)):
+        with open(emu_path, 'wb') as file:
+            pickle.dump(emu_tr, file)
 
 pred_test = emu_tr.predict(x=x_np, theta=theta_test)
 pred_test_mean = pred_test.mean()
