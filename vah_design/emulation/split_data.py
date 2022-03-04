@@ -11,7 +11,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from load import simulation
 
-def generate_split_data():
+def generate_split_data(**kwargs):
 # Load simulation data
     simulation_files = ['mean_for_300_sliced_200_events_design',
                         'mean_for_90_sliced_test_design_800_events_design',
@@ -20,6 +20,8 @@ def generate_split_data():
                         'mean_for_75_batch0_design_1600_events_design']
     
     df_list = [simulation(file) for file in simulation_files]
+
+
     
     # Map the design names to proper form
     model_param_dsgn = ['$N$[$2.76$TeV]',
@@ -45,7 +47,8 @@ def generate_split_data():
     for i in range(0, N):
         sns.histplot(df_list[i].events, x='nevents', binwidth=10 , ax=ax[i])
         ax[i].set_title(label=i)
-    plt.show()
+    #plt.show()
+    #plt.show()
     
     # Allowed error rate for events per design as a percentage
     error_rate = 5
@@ -68,6 +71,9 @@ def generate_split_data():
             f_er_test = pd.concat([f_er_test, df.iloc[:,140:]], axis=0)
             theta_test = pd.concat((theta_test, df.iloc[:,2:17]), axis=0)
     
+
+
+
     # Print the shape of the data arrays
     [print(dat.shape) for dat in [f_train, f_er_train, theta_train, f_test, f_er_test, theta_test]]
     
@@ -82,11 +88,21 @@ def generate_split_data():
     
     # Only keep simulation data that we have corresponding experimental data
     sd_exp_label = ['sd_' + e for e in exp_label]
-    f_train = np.array(f_train[exp_label])
-    f_test = np.array(f_test[exp_label])
-    f_er_train = np.array(f_er_train[sd_exp_label])
-    f_er_test = np.array(f_er_test[sd_exp_label])
-    theta_train = np.array(theta_train)
-    theta_test = np.array(theta_test)
+    f_train = f_train[exp_label]
+    f_test = f_test[exp_label]
+    f_er_train = f_er_train[sd_exp_label]
+    f_er_test = f_er_test[sd_exp_label]
     
-    return f_train, f_test, theta_train, theta_test, f_er_train, f_er_test
+    ### Drop and keep observables depending on kwargs arguments
+    if 'drop_list' in kwargs.keys():
+        drop_list = kwargs['drop_list']
+        drop_sd = ['sd_'+obs for obs in drop_list]
+        f_train, f_er_train = f_train.drop(labels=drop_list, axis=1), f_er_train.drop(labels=drop_sd, axis=1)
+        f_test, f_er_test = f_test.drop(labels=drop_list, axis=1), f_er_test.drop(labels=drop_sd, axis=1)
+    elif 'keep_list' in kwargs.keys():
+        keep_list = kwargs['keep_list']
+        keep_sd = ['sd_'+obs for obs in keep_list]
+        f_train, f_er_train = f_train[keep_list], f_er_train[keep_sd]
+        f_test, f_er_test = f_test[keep_list], f_er_test[keep_sd]
+
+    return f_train.values, f_test.values, theta_train.values, theta_test.values, f_er_train.values, f_er_test.values

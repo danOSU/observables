@@ -11,6 +11,7 @@ import uncertainty_toolbox as uct
 import seaborn as sns
 import matplotlib.pyplot as plt
 import sklearn
+import os
 
 # 8 bins
 ALICE_cent_bins = np.array([[0,5],[5,10],[10,20],[20,30],[30,40],[40,50],[50,60],[60,70]])
@@ -62,10 +63,18 @@ obs_tex_labels = {'dNch_deta' : r'$dN_\mathrm{ch}/d\eta$',
                   'mean_pT_kaon' : r'$\langle p_T \rangle_K$',
                   'mean_pT_pion' : r'$\langle p_T \rangle_\pi$',
 
-                  'pT_fluct' : None,
+                  'pT_fluct' : r'$\delta p_{T,\mathrm{ch}} / \langle p_T \rangle_\mathrm{ch}$',
                   'v22' : r'$v^{(\mathrm{ch})}_2\{2\}$',
                   'v32' : r'$v^{(\mathrm{ch})}_3\{2\}$',
                   'v42' : r'$v^{(\mathrm{ch})}_4\{2\}$'}
+
+index={}
+st_index=0
+for obs_group in  obs_groups.keys():
+    for obs in obs_groups[obs_group]:
+        n_centrality = len(obs_cent_list['Pb-Pb-2760'][obs])
+        index[obs]=[st_index,st_index+n_centrality]
+        st_index = st_index + n_centrality
 
 def plot_UQ(f, fhat, sigmahat, method='PCGP'):
 
@@ -99,7 +108,12 @@ def plot_UQ(f, fhat, sigmahat, method='PCGP'):
             ax.set_title(f'{cen_st}  R2: {r:.2f}')
         fig.suptitle(obs_tex_labels[obs])
         plt.tight_layout()
+        os.makedirs(f'{method}', exist_ok=True)
         plt.savefig(f'{method}/{obs}.png', dpi=200)
+        plt.close('all')
+        #plt.show()
+        
+        
     
     sns.set_context('paper', font_scale=0.8)
     for obs in index.keys():
@@ -108,6 +122,7 @@ def plot_UQ(f, fhat, sigmahat, method='PCGP'):
         nrw = int(np.ceil((ed-st)/4))
         fig, axs = plt.subplots(nrows=nrw, ncols=4, figsize=(10, nrw*4), sharex=False, sharey=False)
         for iii,ax in enumerate(axs.flatten()):
+            
             if iii>=ed-st:
                 continue;
             ii=st+iii
@@ -120,20 +135,35 @@ def plot_UQ(f, fhat, sigmahat, method='PCGP'):
             ax.set_ylabel('Emulation')
             cen_st = obs_cent_list['Pb-Pb-2760'][obs][iii]
             ax.set_title(f'{cen_st}  R2: {r:.2f}')
-        fig.suptitle(obs_tex_labels[obs])
-        plt.tight_layout()
-        plt.savefig(f'{method}/{obs}_emu_sim.png', dpi=200)
-        plt.show()
+            fig.suptitle(obs_tex_labels[obs])
+            plt.tight_layout()
+            os.makedirs(f'{method}/emu_vs_sim/', exist_ok=True)
+            plt.savefig(f'{method}/emu_vs_sim/{obs}.png', dpi=200)
+            plt.close('all')
 
 
-def plot_R2(fhat, f):
+
+def plot_R2(fhat, f, method):
+    sns.set_context('paper',font_scale=0.8)
     rsq = []
     for i in range(fhat.shape[0]):
         sse = np.sum((fhat[i, :] - f[i, :])**2)
         sst = np.sum((f[i, :] - np.mean(f[i, :]))**2)
         rsq.append(1 - sse/sst)
+    fig, ax = plt.subplots()
+    #ax.scatter(np.arange(fhat.shape[0]), rsq)
+    for k in index.keys():
+        low = index[k][0]
+        high = index[k][1]
+        ax.scatter(np.arange(low,high),rsq[low:high], label = k)
+    ax.set_xlabel('Observables')
+    ax.set_ylabel(r'Test $R^2$')
 
-    plt.scatter(np.arange(fhat.shape[0]), rsq)
-    plt.xlabel('observables')
-    plt.ylabel(r'test $r^2$')
+    ax.set_xticks([int(np.ceil((index[k][0]+index[k][1])/2)) for k in index.keys()])
+    ax.set_xticklabels([obs_tex_labels[k] for k in index.keys()], rotation=45)
+    plt.tight_layout()
+    
+    os.makedirs(f'{method}', exist_ok=True)
+    plt.savefig(f'{method}/R2.png', dpi=200)
     plt.show()
+      
