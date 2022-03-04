@@ -43,8 +43,8 @@ obs_cent_list = {
 
 obs_groups = {'yields' : ['dN_dy_pion', 'dN_dy_kaon', 'dN_dy_proton', 'dNch_deta', 'dET_deta'],
               'mean_pT' : ['mean_pT_pion', 'mean_pT_kaon','mean_pT_proton', ],
-              'flows' : ['v22', 'v32', 'v42'],
-              'fluct' : ['pT_fluct']}
+              'fluct' : ['pT_fluct'],
+              'flows' : ['v22', 'v32', 'v42']}
 
 obs_group_labels = {'yields' : r'$dN_\mathrm{id}/dy_p$, $dN_\mathrm{ch}/d\eta$, $dE_T/d\eta$ [GeV]',
                     'mean_pT' : r'$ \langle p_T \rangle_\mathrm{id}$' + ' [GeV]',
@@ -110,7 +110,7 @@ def plot_UQ(f, fhat, sigmahat, method='PCGP'):
         plt.tight_layout()
         os.makedirs(f'{method}', exist_ok=True)
         plt.savefig(f'{method}/{obs}.png', dpi=200)
-        plt.close('all')
+        #plt.close('all')
         #plt.show()
         
         
@@ -139,7 +139,7 @@ def plot_UQ(f, fhat, sigmahat, method='PCGP'):
             plt.tight_layout()
             os.makedirs(f'{method}/emu_vs_sim/', exist_ok=True)
             plt.savefig(f'{method}/emu_vs_sim/{obs}.png', dpi=200)
-            plt.close('all')
+            #plt.close('all')
 
 
 
