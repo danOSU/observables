@@ -18,6 +18,7 @@ from split_data import generate_split_data
 from surmise.emulation import emulator
 from plotting import plot_UQ, plot_R2, st_index
 from scipy.linalg import block_diag
+import matplotlib.pyplot as plt
 
 ####################################################
 # Note: This script takes on avg. 11348 sec.
@@ -65,6 +66,11 @@ def return_usv(train_data, epsilon):
     S = s[0:pc_no]
     U = u[:, 0:pc_no]
     V = vh[0:pc_no, :]
+    fig, ax = plt.subplots()
+    ax.bar(np.arange(0,pc_no),cum_importance[0:pc_no])
+    ax.set_xlabel('PC')
+    ax.set_ylabel('Explained Variance')
+    plt.show()
     return U, S, V, pc_no
 
 u0, s0, v0, pc0 = return_usv(f_train_0,0.05)
@@ -83,7 +89,7 @@ standardpcinfo = {'U': U,
                   'V': V}
 ####################################################
 method_name = 'PCGPR_split'
-is_train = False
+is_train = True
 emu_path = 'VAH_PCGPR_ind.pkl'
 
 if (os.path.exists(emu_path)) and (is_train==False):
