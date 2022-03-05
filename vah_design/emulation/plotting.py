@@ -41,7 +41,7 @@ obs_cent_list = {
     }
 }
 
-obs_groups = {'yields' : ['dN_dy_pion', 'dN_dy_kaon', 'dN_dy_proton', 'dNch_deta', 'dET_deta'],
+obs_groups = {'yields' : ['dNch_deta', 'dET_deta', 'dN_dy_pion', 'dN_dy_kaon', 'dN_dy_proton'],
               'mean_pT' : ['mean_pT_pion', 'mean_pT_kaon','mean_pT_proton', ],
               'fluct' : ['pT_fluct'],
               'flows' : ['v22', 'v32', 'v42']}
