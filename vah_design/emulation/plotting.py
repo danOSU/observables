@@ -12,6 +12,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import sklearn
 import os
+import pandas as pd
 
 # 8 bins
 ALICE_cent_bins = np.array([[0,5],[5,10],[10,20],[20,30],[30,40],[40,50],[50,60],[60,70]])
@@ -167,3 +168,21 @@ def plot_R2(fhat, f, method):
     plt.savefig(f'{method}/R2.png', dpi=200)
     plt.show()
       
+def plot_hist(theta_prior, theta_post):
+    fig, axs = plt.subplots(5, 3, figsize=(16, 16))
+    theta_prior.hist(ax=axs)
+    theta_post.hist(ax=axs, bins=25)
+    
+def plot_density(theta_prior, theta_post, thetanames):
+    dfpost = pd.DataFrame(theta_post, columns = thetanames)
+    dfprior = pd.DataFrame(theta_prior, columns = thetanames)
+    df = pd.concat([dfprior, dfpost])
+    pr = ['prior' for i in range(1000)]
+    ps = ['posterior' for i in range(1000)]
+    pr.extend(ps)
+    df['distribution'] = pr
+    sns.set_context('poster', font_scale=1)
+    sns.set(style="white")
+    g = sns.PairGrid(df, corner=True, diag_sharey=False, hue='distribution')
+    g.map_diag(sns.kdeplot, shade=True)
+    g.map_lower(sns.kdeplot, fill=True)
