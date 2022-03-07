@@ -41,8 +41,8 @@ x_np = x_np.astype('object')
 ##########################################################
 # Note: Pick method_name = 'PCGPwM' or 'PCGPR' or 'PCSK'
 ##########################################################
-method_name = 'PCSK'
-is_train = True
+method_name = 'PCGPwM'
+is_train = False
 emu_path = 'VAH_' + method_name + '.pkl' 
 
 if (os.path.exists(emu_path)) and (is_train==False):

@@ -127,6 +127,7 @@ def plot_UQ(f, fhat, sigmahat, method='PCGP'):
                 continue;
             ii=st+iii
             mse = sklearn.metrics.mean_squared_error(f[:, ii], fhat[:, ii])
+            r = sklearn.metrics.r2_score(f[:, ii], fhat[:, ii])
             ax.errorbar(x=f[:,ii], y=fhat[:,ii], yerr=sigmahat[:, ii], fmt='x')
             min_value = min([ax.get_xlim()[0], ax.get_ylim()[0]])
             max_value = min([ax.get_xlim()[1], ax.get_ylim()[1]])
