@@ -69,6 +69,24 @@ obs_tex_labels = {'dNch_deta' : r'$dN_\mathrm{ch}/d\eta$',
                   'v32' : r'$v^{(\mathrm{ch})}_3\{2\}$',
                   'v42' : r'$v^{(\mathrm{ch})}_4\{2\}$'}
 
+
+# Map the design names to proper form
+model_param_dsgn = ['$N$[$2.76$TeV]',
+ '$p$',
+ '$w$ [fm]',
+ '$d_{\\mathrm{min}}$ [fm]',
+ '$\\sigma_k$',
+ '$T_{\\mathrm{sw}}$ [GeV]',
+ '$T_{\\eta,\\mathrm{kink}}$ [GeV]',
+ '$(\\eta/s)_{\\mathrm{kink}}$',
+ '$a_{\\eta,\\mathrm{low}}$ [GeV${}^{-1}$]',
+ '$a_{\\eta,\\mathrm{high}}$ [GeV${}^{-1}$]',
+ '$(\\zeta/s)_{\\max}$',
+ '$T_{\\zeta,c}$ [GeV]',
+ '$w_{\\zeta}$ [GeV]',
+ '$\\lambda_{\\zeta}$',
+ '$R$']
+
 index={}
 st_index=0
 for obs_group in  obs_groups.keys():
@@ -169,12 +187,13 @@ def plot_R2(fhat, f, method):
     plt.savefig(f'{method}/R2.png', dpi=200)
     plt.show()
       
-def plot_hist(theta_prior, theta_post):
+def plot_hist(theta_prior, theta_post, method):
     fig, axs = plt.subplots(5, 3, figsize=(16, 16))
     theta_prior.hist(ax=axs)
     theta_post.hist(ax=axs, bins=25)
-    
-def plot_density(theta_prior, theta_post, thetanames):
+    plt.savefig(f'{method}/hist.png', dpi=200)
+
+def plot_density(theta_prior, theta_post, thetanames, method):
     dfpost = pd.DataFrame(theta_post, columns = thetanames)
     dfprior = pd.DataFrame(theta_prior, columns = thetanames)
     df = pd.concat([dfprior, dfpost])
@@ -184,6 +203,195 @@ def plot_density(theta_prior, theta_post, thetanames):
     df['distribution'] = pr
     sns.set_context('poster', font_scale=1)
     sns.set(style="white")
-    g = sns.PairGrid(df, corner=True, diag_sharey=False, hue='distribution')
+    g = sns.PairGrid(df, corner=True, diag_sharey=False, hue='distribution')    
     g.map_diag(sns.kdeplot, shade=True)
     g.map_lower(sns.kdeplot, fill=True)
+    plt.savefig(f'{method}/density.png', dpi=200)
+
+def plot_corner_viscosity(posterior_df, method_name, n_samples = 1000, prune=1):
+
+    sns.set_context("notebook", font_scale=1.5)
+    sns.set_style("ticks")
+    #map_parameters = rslt.x
+    #map_parameters=map_values_saved.flatten()
+    sns.set_palette('bright')
+    observables_to_plot=[6, 7 , 8, 9, 10, 11, 12, 13]
+    g = sns.PairGrid(posterior_df.iloc[0:n_samples:prune,observables_to_plot], corner=True, diag_sharey=False)
+    g.map_lower(sns.kdeplot, color=sns.color_palette()[5], fill=True)
+    g.map_diag(sns.kdeplot, linewidth=2, shade=True, color=sns.color_palette()[1], fill=True)
+    for n,i in enumerate(observables_to_plot):
+        ax=g.axes[n][n]
+        #ax.axvline(x=map_parameters[i], ls='--', c=sns.color_palette()[9], label= 'MAP')
+    #ax.text(0,0.9,s= f'{map_parameters[i]:.3f}', transform=ax.transAxes)
+    #ax.axvline(x=truth[i], ls='--', c=sns.color_palette()[3], label = 'Truth')
+    #ax.text(0,0.8,s= f'{truth[i]:.3f}', transform=ax.transAxes)
+        if n==4:
+            ax.legend(loc=0,fontsize='xx-small')    
+    plt.tight_layout()
+    plt.savefig(f'{method_name}/Viscosity.png', dpi=200)
+    plt.show()
+
+
+def plot_corner_no_viscosity(posterior_df, method_name, n_samples = 1000, prune=1):
+
+    sns.set_context("notebook", font_scale=1.5)
+    sns.set_style("ticks")
+    #map_parameters=map_values_saved.flatten()
+    #n_samples_prior = 20000
+    #prune = 1
+    sns.set_palette('bright')
+    observables_to_plot=[0, 1, 2 ,3 , 4, 5, 14]
+    g = sns.PairGrid(posterior_df.iloc[0:n_samples:prune,observables_to_plot], corner=True, diag_sharey=False)
+    g.map_lower(sns.kdeplot, color=sns.color_palette()[4], fill=True)
+    #g.map_upper(sns.kdeplot, shade=True, color=sns.color_palette()[0])
+    g.map_diag(sns.kdeplot, linewidth=2, shade=True, color=sns.color_palette()[4])
+    for n,i in enumerate(observables_to_plot):
+        ax=g.axes[n][n]
+    #    ax.axvline(x=map_parameters[i], ls='--', c=sns.color_palette()[9], label='MAP')
+    #ax.text(0.0,1,s= f'{map_parameters[i]:.3f}',fontdict={'color':sns.color_palette()[9]}, transform=ax.transAxes)
+    #ax.axvline(x=truth[i], ls='--', c=sns.color_palette()[3], label = 'Truth')
+    #ax.text(0.6,1,s= f'{truth[i]:.3f}',fontdict={'color':sns.color_palette()[3]}, transform=ax.transAxes)
+        if n==0:
+            ax.legend(loc=1,fontsize='xx-small')
+    plt.tight_layout()
+    plt.savefig(f'{method_name}/WithoutViscosity.png', dpi=200)
+    plt.show()
+   
+def plot_corner_all(posterior_df, method_name, n_samples = 1000, prune=1):
+    sns.set_context("notebook", font_scale=1.5)
+    sns.set_style("ticks")
+    #map_parameters=map_values_saved.flatten()
+    #n_samples_prior = 20000
+    #prune = 1
+    #map_parameters = rslt.x
+    sns.set_palette('bright')
+    observables_to_plot=[i for i in range(0,15)]
+    g = sns.PairGrid(posterior_df.iloc[0:n_samples:prune,observables_to_plot], corner=True, diag_sharey=False)
+    g.map_lower(sns.kdeplot, color=sns.color_palette()[4], fill=True)
+    #g.map_upper(sns.kdeplot, shade=True, color=sns.color_palette()[0])
+    g.map_diag(sns.kdeplot, linewidth=2, shade=True, color=sns.color_palette()[4])
+    for n,i in enumerate(observables_to_plot):
+        ax=g.axes[n][n]
+        #ax.axvline(x=map_parameters[i], ls='--', c=sns.color_palette()[9], label='MAP')
+    #ax.text(0.0,1,s= f'{map_parameters[i]:.3f}',fontdict={'color':sns.color_palette()[9]}, transform=ax.transAxes)
+    #ax.axvline(x=truth[i], ls='--', c=sns.color_palette()[3], label = 'Truth')
+    #ax.text(0.6,1,s= f'{truth[i]:.3f}',fontdict={'color':sns.color_palette()[3]}, transform=ax.transAxes)
+        if n==0:
+            ax.legend(loc=1,fontsize='xx-small')
+    plt.tight_layout()
+    plt.savefig(f'{method_name}/all.png', dpi=200)
+    plt.show()
+
+def zeta_over_s(T, zmax, T0, width, asym):
+    DeltaT = T - T0
+    sign = 1 if DeltaT>0 else -1
+    x = DeltaT/(width*(1.+asym*sign))
+    return zmax/(1.+x**2)
+zeta_over_s = np.vectorize(zeta_over_s)
+
+def eta_over_s(T, T_k, alow, ahigh, etas_k):
+    if T < T_k:
+        y = etas_k + alow*(T-T_k)
+    else:
+        y = etas_k + ahigh*(T-T_k)
+    if y > 0:
+        return y
+    else:
+        return 0.
+eta_over_s = np.vectorize(eta_over_s)
+
+
+def plot_shear(posterior_df, method_name, prior, n_samples = 1000, prune=1):
+
+    Tt = np.linspace(0.1, 0.4, 100)
+
+    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(8,6), sharex=False, sharey=False, constrained_layout=True)
+    fig.suptitle("Specific shear viscosity posterior", wrap=True)
+
+# True temperature dependece of the viscosity
+
+#[T_k, alow, ahigh, etas_k] = truth[[7,8,9,10]]
+#true_shear = eta_over_s(Tt, T_k, alow, ahigh, etas_k)
+
+
+    prior_etas = []
+    design_min, design_max = prior[:,0], prior[:,1]
+    for row in np.random.uniform(design_min, design_max,(10000,15))[:,[6,7,8,9]]:
+        [T_k, etas_k, alow, ahigh] = row
+        prior=[]
+        for T in Tt:
+            prior.append(eta_over_s(T,T_k,alow,ahigh,etas_k))
+        prior_etas.append(prior)
+    per0_pr,per5_pr,per20_pr,per80_pr,per95_pr,per100_pr=np.percentile(prior_etas,[0,5,20,80,95,100], axis=0)
+
+    posterior_etas = []
+    
+    for row in posterior_df.iloc[0:n_samples:prune,[6,7,8,9]].values:
+        [T_k, etas_k, alow, ahigh] = row
+        posterior=[]
+        for T in Tt:
+            posterior.append(eta_over_s(T,T_k,alow,ahigh,etas_k))
+        posterior_etas.append(posterior)
+    per0,per5,per20,per80,per95,per100=np.percentile(posterior_etas,[0,5,20,80,95,100], axis=0)
+    axes.fill_between(Tt, per5_pr,per95_pr,color=sns.color_palette()[7], alpha=0.1, label='90% Prior')
+    axes.fill_between(Tt,per5,per95,color=sns.color_palette()[9], alpha=0.2, label='90% C.I.')
+    axes.fill_between(Tt,per20,per80, color=sns.color_palette()[9], alpha=0.3, label='60% C.I.')
+#axes.plot(Tt, true_shear, color = 'r', label = 'Truth', linewidth=5)
+#pos=np.array(prior_etas).T
+#axes.violinplot(pos[1::10,:].T, positions=Tt[1::10],widths=0.03)
+
+    axes.legend(loc='upper left')
+#axes.set_ylim(0,1.2)
+    axes.set_xlabel('T [GeV]')
+    axes.set_ylabel('$\eta/s$')
+    plt.tight_layout()
+    plt.savefig(f'{method_name}/shear.png', dpi=200)
+    plt.show()
+
+def plot_bulk(posterior_df, method_name, prior, n_samples = 1000, prune=1):
+    
+    Tt = np.linspace(0.1, 0.4, 100)
+    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(8,6),
+                            sharex=False, sharey=False, constrained_layout=True)
+    fig.suptitle("Specefic bulk viscosity posterior", wrap=True)
+
+    # True temperature dependece of the viscosity
+
+    #[zmax, T0, width, asym] = truth[[11,12,13,14]]
+    #true_bulk = zeta_over_s(Tt, zmax, T0, width, asym)
+
+
+    prior_zetas = []
+    design_min, design_max = prior[:,0], prior[:,1]
+    for row in np.random.uniform(design_min, design_max,(10000,15))[:,[10,11,12,13]]:
+        [zmax, T0, width, asym] = row   
+        prior=[]
+        for T in Tt:
+            prior.append(zeta_over_s(T,zmax, T0, width, asym))
+        prior_zetas.append(prior)
+    per0_pr,per5_pr,per20_pr,per80_pr,per95_pr,per100_pr=np.percentile(prior_zetas,[0,5,20,80,95,100], axis=0)
+
+    posterior_zetas = []
+        
+    for row in posterior_df.iloc[0:n_samples:prune,[10,11,12,13]].values:
+        [zmax, T0, width, asym] = row   
+        posterior=[]
+        for T in Tt:
+            posterior.append(zeta_over_s(T,zmax, T0, width, asym))
+        posterior_zetas.append(posterior)
+    per0,per5,per20,per80,per95,per100=np.percentile(posterior_zetas,[0,5,20,80,95,100], axis=0)
+    axes.fill_between(Tt, per0_pr,per100_pr,color=sns.color_palette()[7], alpha=0.1, label='Prior')
+    axes.fill_between(Tt,per5,per95,color=sns.color_palette()[4], alpha=0.2, label='90% C.I.')
+    axes.fill_between(Tt,per20,per80, color=sns.color_palette()[4], alpha=0.3, label='60% C.I.')
+    #axes.plot(Tt, true_bulk, color = 'r', label = 'Truth', linewidth=5)
+
+    #pos=np.array(prior_zetas).T
+    #axes.violinplot(pos[1::10,:].T, positions=Tt[1::10],widths=0.03)
+
+    axes.legend(loc='upper right')
+    #axes.set_ylim(0,1.2)
+    axes.set_xlabel('T [GeV]')
+    axes.set_ylabel('$\zeta/s$')
+    plt.tight_layout()
+    plt.savefig(f'{method_name}/bulk.png', dpi=200)
+    plt.show()
