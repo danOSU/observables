@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sun Feb 27 21:42:11 2022
+Created on Sat Mar  5 19:37:50 2022
 
 @author: ozgesurer
 """
@@ -12,28 +12,38 @@ import numpy as np
 import time
 from split_data import generate_split_data
 from surmise.emulation import emulator
-from plotting import plot_UQ, plot_R2
+from surmise.calibration import calibrator
+from plotting import plot_UQ, plot_R2, plot_hist, plot_density
+from priors import prior_VAH
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 import pyximport
 pyximport.install(setup_args={"include_dirs":np.get_include()},
                   reload_support=True)
 
 ####################################################
-# Note: Total emu time: 390 sec.  Total cal time: 299
+# Note: Total emu time: 390 sec.  Total cal time: 500
 ####################################################
 seconds_st = time.time()
 
 # Note: Here we can create different funcs to split data into training and test
 f_train, f_test, theta_train, theta_test, sd_train, sd_test, y, thetanames = generate_split_data()
 
-x_np = np.arange(0, f_train.shape[1])[:, None]
+# Combine all for calibration
+fcal = np.concatenate((f_train, f_test), axis=0)
+thetacal = np.concatenate((theta_train, theta_test), axis=0)
+sdcal = np.concatenate((sd_train, sd_test), axis=0)
+
+x_np = np.arange(0, fcal.shape[1])[:, None]
 x_np = x_np.astype('object')
 
 ##########################################################
 # Note: Pick method_name = 'PCGPwM' or 'PCGPR' or 'PCSK'
 ##########################################################
-method_name = 'PCGPwM'
-is_train = False
+method_name = 'PCSK'
+is_train = True
 emu_path = 'VAH_' + method_name + '.pkl' 
 
 if (os.path.exists(emu_path)) and (is_train==False):
@@ -44,8 +54,8 @@ else:
     print('training emulators')
     if method_name == 'PCGPwM':
         emu_tr = emulator(x=x_np,
-                          theta=theta_train,
-                          f=f_train.T,
+                          theta=thetacal,
+                          f=fcal.T,
                           method='PCGPwM',
                           args={'epsilon': 0.05})
         
@@ -54,34 +64,66 @@ else:
         prior_max = [30, 0.7, 1.5, 1.7, 2, 0.165, 0.3, 0.2, 1, 2, 0.25, 0.3, 0.15, 0.8, 1]
         prior_dict = {'min': prior_min, 'max': prior_max}
         emu_tr = emulator(x=x_np,
-                          theta=theta_train,
-                          f=f_train.T,
+                          theta=thetacal,
+                          f=fcal.T,
                           method='PCGPR',
                           args={'epsilon': 0.05,
                                 'prior': prior_dict})
     elif method_name == 'PCSK':
         emu_tr = emulator(x=x_np,
-                          theta=theta_train,
-                          f=f_train.T,
+                          theta=thetacal,
+                          f=fcal.T,
                           method='PCSK',
                           args={'epsilonPC': 0.01, # this does not mean full errors
-                                'simsd': np.absolute(sd_train.T)})
+                                'simsd': np.absolute(sdcal.T)})
 
 
     if (is_train==True) or not(os.path.exists(emu_path)):
         with open(emu_path, 'wb') as file:
             pickle.dump(emu_tr, file)
-            
-pred_test = emu_tr.predict(x=x_np, theta=theta_test)
-pred_test_mean = pred_test.mean()
-pred_test_var = pred_test.var()
 
-# Plotting diagnostics
-plot_UQ(f_test, pred_test_mean.T, np.sqrt(pred_test_var.T), method=method_name)
-plot_R2(pred_test_mean, f_test.T, method=method_name)
 
 seconds_end = time.time()
 print('Total emu time:', seconds_end - seconds_st)
 
 
 seconds_st = time.time()
+
+####################################################
+# CALIBRATOR
+####################################################
+
+calibrate = True
+cal_path = 'VAH_' + 'calibrator' + '.pkl' 
+
+if (os.path.exists(cal_path)) and (calibrate==False):
+    print('Saved Calibrators exists and overide is prohibited')
+    with open(cal_path, 'rb') as file:
+        cal = pickle.load(file)    
+else:
+    y_mean = np.array(y.iloc[0])
+    obsvar = np.array(y.iloc[1])
+    obsvar[obsvar < 10**(-6)] = 10**(-6)
+    if calibrate:
+        cal = calibrator(emu=emu_tr,
+                         y=y_mean,
+                         x=x_np,
+                         thetaprior=prior_VAH,
+                         method='directbayeswoodbury',
+                         args={'sampler': 'PTLMC'},
+                         yvar=obsvar)
+    
+    if (calibrate==True) or not(os.path.exists(cal_path)):
+        with open(cal_path, 'wb') as file:
+            pickle.dump(cal, file)
+
+theta_post = cal.theta.rnd(1000)
+theta_post = pd.DataFrame(theta_post, columns=np.array(thetanames))
+theta_prior = pd.DataFrame(prior_VAH.rnd(1000), columns=np.array(thetanames))
+    
+plot_hist(theta_prior, theta_post)
+
+# plot_density(theta_prior, theta_post, thetanames)
+
+seconds_end = time.time()
+print('Total cal time:', seconds_end - seconds_st)

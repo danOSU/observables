@@ -104,5 +104,6 @@ def generate_split_data(**kwargs):
         keep_sd = ['sd_'+obs for obs in keep_list]
         f_train, f_er_train = f_train[keep_list], f_er_train[keep_sd]
         f_test, f_er_test = f_test[keep_list], f_er_test[keep_sd]
+        
 
-    return f_train.values, f_test.values, theta_train.values, theta_test.values, f_er_train.values, f_er_test.values
+    return f_train.values, f_test.values, theta_train.values, theta_test.values, f_er_train.values, f_er_test.values, experiment, theta_train.columns
