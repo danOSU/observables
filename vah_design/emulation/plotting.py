@@ -208,16 +208,22 @@ def plot_density(theta_prior, theta_post, thetanames, method):
     g.map_lower(sns.kdeplot, fill=True)
     plt.savefig(f'{method}/density.png', dpi=200)
 
-def plot_corner_viscosity(posterior_df, method_name, n_samples = 1000, prune=1, MAP=None):
+def plot_corner_viscosity(posterior_df,prior_df, method_name, n_samples=1000, prune=1, MAP=None):
 
     sns.set_context("notebook", font_scale=1.5)
     sns.set_style("ticks")
     #map_parameters = rslt.x
     sns.set_palette('bright')
-    observables_to_plot=[6, 7 , 8, 9, 10, 11, 12, 13]
-    g = sns.PairGrid(posterior_df.iloc[0:n_samples:prune,observables_to_plot], corner=True, diag_sharey=False)
-    g.map_lower(sns.kdeplot, color=sns.color_palette()[5], fill=True)
-    g.map_diag(sns.kdeplot, linewidth=2, shade=True, color=sns.color_palette()[1], fill=True)
+    observables_to_plot=[6, 7 , 8, 9, 10, 11, 12, 13 ]
+    posterior_df['distribution'] = 'posterior'
+    prior_df['distribution'] = 'prior'
+    df = pd.concat([prior_df, posterior_df], ignore_index=True)
+    obs = observables_to_plot + [15]
+    df = df.iloc[0:2*n_samples:prune,obs] 
+    g = sns.PairGrid(df, corner=True, diag_sharey=False, hue='distribution', hue_kws={'alpha':0.5},
+                    palette={'prior':sns.color_palette()[4],'posterior':sns.color_palette()[5]})
+    g.map_lower(sns.kdeplot, fill=True)
+    g.map_diag(sns.kdeplot, linewidth=2, shade=True , fill=True)
     for n,i in enumerate(observables_to_plot):
         ax=g.axes[n][n]
         if MAP is not None:
@@ -233,7 +239,7 @@ def plot_corner_viscosity(posterior_df, method_name, n_samples = 1000, prune=1, 
     plt.show()
 
 
-def plot_corner_no_viscosity(posterior_df, method_name, n_samples = 1000, prune=1, MAP=None):
+def plot_corner_no_viscosity(posterior_df,prior_df,  method_name, n_samples = 1000, prune=1, MAP=None):
 
     sns.set_context("notebook", font_scale=1.5)
     sns.set_style("ticks")
@@ -242,10 +248,16 @@ def plot_corner_no_viscosity(posterior_df, method_name, n_samples = 1000, prune=
     #prune = 1
     sns.set_palette('bright')
     observables_to_plot=[0, 1, 2 ,3 , 4, 5, 14]
-    g = sns.PairGrid(posterior_df.iloc[0:n_samples:prune,observables_to_plot], corner=True, diag_sharey=False)
-    g.map_lower(sns.kdeplot, color=sns.color_palette()[4], fill=True)
+    posterior_df['distribution'] = 'posterior'
+    prior_df['distribution'] = 'prior'
+    df = pd.concat([prior_df, posterior_df], ignore_index=True)
+    obs = observables_to_plot + [15]
+    df = df.iloc[0:2*n_samples:prune,obs] 
+    g = sns.PairGrid(df, corner=True, diag_sharey=False, hue='distribution', hue_kws={'alpha':0.5},
+                    palette={'prior':sns.color_palette()[4],'posterior':sns.color_palette()[5]})
+    g.map_lower(sns.kdeplot, fill=True)
     #g.map_upper(sns.kdeplot, shade=True, color=sns.color_palette()[0])
-    g.map_diag(sns.kdeplot, linewidth=2, shade=True, color=sns.color_palette()[4])
+    g.map_diag(sns.kdeplot, linewidth=2, shade=True)
     for n,i in enumerate(observables_to_plot):
         ax=g.axes[n][n]
         if MAP is not None:
@@ -260,7 +272,7 @@ def plot_corner_no_viscosity(posterior_df, method_name, n_samples = 1000, prune=
     plt.savefig(f'{method_name}/WithoutViscosity.png', dpi=200)
     plt.show()
    
-def plot_corner_all(posterior_df, method_name, n_samples = 1000, prune=1, MAP=None):
+def plot_corner_all(posterior_df, prior_df, method_name, n_samples = 1000, prune=1, MAP=None):
     sns.set_context("notebook", font_scale=1.5)
     sns.set_style("ticks")
     #map_parameters=map_values_saved.flatten()
@@ -269,8 +281,15 @@ def plot_corner_all(posterior_df, method_name, n_samples = 1000, prune=1, MAP=No
     #map_parameters = rslt.x
     sns.set_palette('bright')
     observables_to_plot=[i for i in range(0,15)]
-    g = sns.PairGrid(posterior_df.iloc[0:n_samples:prune,observables_to_plot], corner=True, diag_sharey=False)
-    g.map_lower(sns.kdeplot, color=sns.color_palette()[4], fill=True)
+    posterior_df['distribution'] = 'posterior'
+    prior_df['distribution'] = 'prior'
+    df = pd.concat([prior_df, posterior_df], ignore_index=True)
+    obs = observables_to_plot + [15]
+    df = df.iloc[0:2*n_samples:prune,obs] 
+    g = sns.PairGrid(df, corner=True, diag_sharey=False, hue='distribution', hue_kws={'alpha':0.5},
+                    palette={'prior':sns.color_palette()[4],'posterior':sns.color_palette()[5]})
+    g.map_lower(sns.kdeplot, fill=True)
+    g.map_lower(sns.kdeplot, fill=True)
     #g.map_upper(sns.kdeplot, shade=True, color=sns.color_palette()[0])
     g.map_diag(sns.kdeplot, linewidth=2, shade=True, color=sns.color_palette()[4])
     for n,i in enumerate(observables_to_plot):
