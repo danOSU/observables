@@ -13,7 +13,7 @@ import time
 from split_data import generate_split_data
 from surmise.emulation import emulator
 from surmise.calibration import calibrator
-from plotting import plot_UQ, plot_R2, plot_hist, plot_density
+from plotting import *
 from priors import prior_VAH
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -104,13 +104,18 @@ else:
     y_mean = np.array(y.iloc[0])
     obsvar = np.array(y.iloc[1])
     obsvar[obsvar < 10**(-6)] = 10**(-6)
+    obsvar = (0.1*y_mean)**2
     if calibrate:
         cal = calibrator(emu=emu_tr,
                          y=y_mean,
                          x=x_np,
                          thetaprior=prior_VAH,
                          method='directbayeswoodbury',
-                         args={'sampler': 'PTLMC'},
+                         args={'sampler': 'PTLMC',
+                               'numtemps': 40,
+                               'numchain': 30,
+                               'maxtemp': 30,
+                               'sampperchain': 400},
                          yvar=obsvar)
     
     if (calibrate==True) or not(os.path.exists(cal_path)):
@@ -121,8 +126,9 @@ theta_post = cal.theta.rnd(1000)
 theta_post = pd.DataFrame(theta_post, columns=np.array(thetanames))
 theta_prior = pd.DataFrame(prior_VAH.rnd(1000), columns=np.array(thetanames))
     
-plot_hist(theta_prior, theta_post)
-
+plot_hist(theta_prior, theta_post, method='PCSK')
+plot_corner_no_viscosity(theta_post, 'PCSK', 1000, 1)
+plot_corner_viscosity(theta_post, 'PCSK', 1000, 1)
 # plot_density(theta_prior, theta_post, thetanames)
 
 seconds_end = time.time()
