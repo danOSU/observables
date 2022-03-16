@@ -160,7 +160,7 @@ def plot_UQ(f, fhat, sigmahat, method='PCGP'):
             os.makedirs(f'{method}/emu_vs_sim/', exist_ok=True)
             plt.savefig(f'{method}/emu_vs_sim/{obs}.png', dpi=200)
             #plt.close('all')
-
+    return None
 
 
 def plot_R2(fhat, f, method):
@@ -186,6 +186,7 @@ def plot_R2(fhat, f, method):
     os.makedirs(f'{method}', exist_ok=True)
     plt.savefig(f'{method}/R2.png', dpi=200)
     plt.show()
+    return None
       
 def plot_hist(theta_prior, theta_post, method):
     fig, axs = plt.subplots(5, 3, figsize=(16, 16))
@@ -207,6 +208,7 @@ def plot_density(theta_prior, theta_post, thetanames, method):
     g.map_diag(sns.kdeplot, shade=True)
     g.map_lower(sns.kdeplot, fill=True)
     plt.savefig(f'{method}/density.png', dpi=200)
+    return None
 
 def plot_corner_viscosity(posterior_df,prior_df, method_name, n_samples=1000, prune=1, MAP=None):
 
@@ -215,6 +217,8 @@ def plot_corner_viscosity(posterior_df,prior_df, method_name, n_samples=1000, pr
     #map_parameters = rslt.x
     sns.set_palette('bright')
     observables_to_plot=[6, 7 , 8, 9, 10, 11, 12, 13 ]
+    posterior_df = posterior_df.copy(deep=True)
+    prior_df = prior_df.copy(deep=True)
     posterior_df['distribution'] = 'posterior'
     prior_df['distribution'] = 'prior'
     df = pd.concat([prior_df, posterior_df], ignore_index=True)
@@ -237,6 +241,7 @@ def plot_corner_viscosity(posterior_df,prior_df, method_name, n_samples=1000, pr
     plt.tight_layout()
     plt.savefig(f'{method_name}/Viscosity.png', dpi=200)
     plt.show()
+    return None
 
 
 def plot_corner_no_viscosity(posterior_df,prior_df,  method_name, n_samples = 1000, prune=1, MAP=None):
@@ -248,6 +253,8 @@ def plot_corner_no_viscosity(posterior_df,prior_df,  method_name, n_samples = 10
     #prune = 1
     sns.set_palette('bright')
     observables_to_plot=[0, 1, 2 ,3 , 4, 5, 14]
+    posterior_df = posterior_df.copy(deep=True)
+    prior_df = prior_df.copy(deep=True)
     posterior_df['distribution'] = 'posterior'
     prior_df['distribution'] = 'prior'
     df = pd.concat([prior_df, posterior_df], ignore_index=True)
@@ -271,6 +278,7 @@ def plot_corner_no_viscosity(posterior_df,prior_df,  method_name, n_samples = 10
     plt.tight_layout()
     plt.savefig(f'{method_name}/WithoutViscosity.png', dpi=200)
     plt.show()
+    return None
    
 def plot_corner_all(posterior_df, prior_df, method_name, n_samples = 1000, prune=1, MAP=None):
     sns.set_context("notebook", font_scale=1.5)
@@ -281,6 +289,8 @@ def plot_corner_all(posterior_df, prior_df, method_name, n_samples = 1000, prune
     #map_parameters = rslt.x
     sns.set_palette('bright')
     observables_to_plot=[i for i in range(0,15)]
+    posterior_df = posterior_df.copy(deep=True)
+    prior_df = prior_df.copy(deep=True)
     posterior_df['distribution'] = 'posterior'
     prior_df['distribution'] = 'prior'
     df = pd.concat([prior_df, posterior_df], ignore_index=True)
@@ -305,6 +315,7 @@ def plot_corner_all(posterior_df, prior_df, method_name, n_samples = 1000, prune
     plt.tight_layout()
     plt.savefig(f'{method_name}/all.png', dpi=200)
     plt.show()
+    return None
 
 def zeta_over_s(T, zmax, T0, width, asym):
     DeltaT = T - T0
@@ -371,6 +382,7 @@ def plot_shear(posterior_df, method_name, prior, n_samples = 1000, prune=1):
     plt.tight_layout()
     plt.savefig(f'{method_name}/shear.png', dpi=200)
     plt.show()
+    return None
 
 def plot_bulk(posterior_df, method_name, prior, n_samples = 1000, prune=1):
     
@@ -419,3 +431,4 @@ def plot_bulk(posterior_df, method_name, prior, n_samples = 1000, prune=1):
     plt.tight_layout()
     plt.savefig(f'{method_name}/bulk.png', dpi=200)
     plt.show()
+    return None
