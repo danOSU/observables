@@ -208,12 +208,11 @@ def plot_density(theta_prior, theta_post, thetanames, method):
     g.map_lower(sns.kdeplot, fill=True)
     plt.savefig(f'{method}/density.png', dpi=200)
 
-def plot_corner_viscosity(posterior_df, method_name, n_samples = 1000, prune=1):
+def plot_corner_viscosity(posterior_df, method_name, n_samples = 1000, prune=1, MAP=None):
 
     sns.set_context("notebook", font_scale=1.5)
     sns.set_style("ticks")
     #map_parameters = rslt.x
-    #map_parameters=map_values_saved.flatten()
     sns.set_palette('bright')
     observables_to_plot=[6, 7 , 8, 9, 10, 11, 12, 13]
     g = sns.PairGrid(posterior_df.iloc[0:n_samples:prune,observables_to_plot], corner=True, diag_sharey=False)
@@ -221,8 +220,10 @@ def plot_corner_viscosity(posterior_df, method_name, n_samples = 1000, prune=1):
     g.map_diag(sns.kdeplot, linewidth=2, shade=True, color=sns.color_palette()[1], fill=True)
     for n,i in enumerate(observables_to_plot):
         ax=g.axes[n][n]
-        #ax.axvline(x=map_parameters[i], ls='--', c=sns.color_palette()[9], label= 'MAP')
-    #ax.text(0,0.9,s= f'{map_parameters[i]:.3f}', transform=ax.transAxes)
+        if MAP is not None:
+            map_parameters=MAP.flatten()
+            ax.axvline(x=map_parameters[i], ls='--', c=sns.color_palette()[9], label= 'MAP')
+            ax.text(0,0.9,s= f'{map_parameters[i]:.3f}', transform=ax.transAxes)
     #ax.axvline(x=truth[i], ls='--', c=sns.color_palette()[3], label = 'Truth')
     #ax.text(0,0.8,s= f'{truth[i]:.3f}', transform=ax.transAxes)
         if n==4:
@@ -232,7 +233,7 @@ def plot_corner_viscosity(posterior_df, method_name, n_samples = 1000, prune=1):
     plt.show()
 
 
-def plot_corner_no_viscosity(posterior_df, method_name, n_samples = 1000, prune=1):
+def plot_corner_no_viscosity(posterior_df, method_name, n_samples = 1000, prune=1, MAP=None):
 
     sns.set_context("notebook", font_scale=1.5)
     sns.set_style("ticks")
@@ -247,8 +248,10 @@ def plot_corner_no_viscosity(posterior_df, method_name, n_samples = 1000, prune=
     g.map_diag(sns.kdeplot, linewidth=2, shade=True, color=sns.color_palette()[4])
     for n,i in enumerate(observables_to_plot):
         ax=g.axes[n][n]
-    #    ax.axvline(x=map_parameters[i], ls='--', c=sns.color_palette()[9], label='MAP')
-    #ax.text(0.0,1,s= f'{map_parameters[i]:.3f}',fontdict={'color':sns.color_palette()[9]}, transform=ax.transAxes)
+        if MAP is not None:
+            map_parameters = MAP.flatten()
+            ax.axvline(x=map_parameters[i], ls='--', c=sns.color_palette()[9], label='MAP')
+            ax.text(0.0,1,s= f'{map_parameters[i]:.3f}',fontdict={'color':sns.color_palette()[9]}, transform=ax.transAxes)
     #ax.axvline(x=truth[i], ls='--', c=sns.color_palette()[3], label = 'Truth')
     #ax.text(0.6,1,s= f'{truth[i]:.3f}',fontdict={'color':sns.color_palette()[3]}, transform=ax.transAxes)
         if n==0:
@@ -257,7 +260,7 @@ def plot_corner_no_viscosity(posterior_df, method_name, n_samples = 1000, prune=
     plt.savefig(f'{method_name}/WithoutViscosity.png', dpi=200)
     plt.show()
    
-def plot_corner_all(posterior_df, method_name, n_samples = 1000, prune=1):
+def plot_corner_all(posterior_df, method_name, n_samples = 1000, prune=1, MAP=None):
     sns.set_context("notebook", font_scale=1.5)
     sns.set_style("ticks")
     #map_parameters=map_values_saved.flatten()
@@ -272,8 +275,10 @@ def plot_corner_all(posterior_df, method_name, n_samples = 1000, prune=1):
     g.map_diag(sns.kdeplot, linewidth=2, shade=True, color=sns.color_palette()[4])
     for n,i in enumerate(observables_to_plot):
         ax=g.axes[n][n]
-        #ax.axvline(x=map_parameters[i], ls='--', c=sns.color_palette()[9], label='MAP')
-    #ax.text(0.0,1,s= f'{map_parameters[i]:.3f}',fontdict={'color':sns.color_palette()[9]}, transform=ax.transAxes)
+        if MAP is not None:
+            map_parameters = MAP.flatten()
+            ax.axvline(x=map_parameters[i], ls='--', c=sns.color_palette()[9], label='MAP')
+            ax.text(0.0,1,s= f'{map_parameters[i]:.3f}',fontdict={'color':sns.color_palette()[9]}, transform=ax.transAxes)
     #ax.axvline(x=truth[i], ls='--', c=sns.color_palette()[3], label = 'Truth')
     #ax.text(0.6,1,s= f'{truth[i]:.3f}',fontdict={'color':sns.color_palette()[3]}, transform=ax.transAxes)
         if n==0:
