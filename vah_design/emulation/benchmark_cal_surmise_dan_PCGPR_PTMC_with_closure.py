@@ -67,7 +67,7 @@ x_np = x_np.astype('object')
 # Note: Pick method_name = 'PCGPwM' or 'PCGPR' or 'PCSK'
 ##########################################################
 
-method_name = 'PCSK'
+method_name = 'PCGPR'
 is_train = True
 if closure==False:
     emu_path = 'VAH_' + method_name + '.pkl' 
@@ -97,7 +97,7 @@ else:
                           theta=thetacal,
                           f=fcal.T,
                           method='PCGPR',
-                          args={'epsilon': 0.02,
+                          args={'epsilon': 0.04,
                                 'prior': prior_dict})
     elif method_name == 'PCSK':
         emu_tr = emulator(x=x_np,

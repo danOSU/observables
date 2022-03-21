@@ -13,6 +13,8 @@ import dill as pickle
 import numpy as np
 import time
 from split_data import generate_split_data
+from sklearn.preprocessing import StandardScaler
+import math
 from surmise.emulation import emulator
 from surmise.calibration import calibrator
 from plotting import plot_UQ, plot_R2, plot_hist, plot_density
@@ -20,6 +22,8 @@ from priors import prior_VAH
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+from scipy.linalg import block_diag
 
 import pyximport
 pyximport.install(setup_args={"include_dirs":np.get_include()},
@@ -32,6 +36,22 @@ seconds_st = time.time()
 
 # Note: Here we can create different funcs to split data into training and test
 f_train, f_test, theta_train, theta_test, sd_train, sd_test, y, thetanames = generate_split_data()
+
+subset= ['v22_[0 5]',
+       'v22_[ 5 10]', 'v22_[10 20]', 'v22_[20 30]', 'v22_[30 40]',
+       'v22_[40 50]', 'v22_[50 60]', 'v22_[60 70]', 'v32_[0 5]', 'v32_[ 5 10]',
+       'v32_[10 20]', 'v32_[20 30]', 'v32_[30 40]', 'v32_[40 50]', 'v42_[0 5]',
+       'v42_[ 5 10]', 'v42_[10 20]', 'v42_[20 30]', 'v42_[30 40]',
+       'v42_[40 50]']
+
+obs_type = ['v22','v32','v42']
+
+f_train_0, f_test_0, theta_train_0, theta_test_0, sd_train_0, sd_test_0,_,_ = generate_split_data(drop_list=subset)
+
+f_train_1, f_test_1, theta_train_1, theta_test_1, sd_train_1, sd_test_1,_,_ = generate_split_data(keep_list=subset)
+
+print(f'Shape of first set {f_train_0.shape} and Shape of the second set {f_train_1.shape}')
+
 # Perform a closure test or not. If True will use pseudo-experimental data to test the accuracy of the inference. 
 closure = True
 # Combine all for calibration
@@ -53,9 +73,60 @@ else:
     sd_train = np.delete(sd_train, -1*num, 0)
     theta_train = np.delete(theta_train, -1*num, 0)
 
+    f_train_0 = np.delete(f_train_0, -1*num, 0)
+    sd_train_0 = np.delete(sd_train_0, -1*num, 0)
+
+    f_train_1 = np.delete(f_train_1, -1*num, 0)
+    sd_train_1 = np.delete(sd_train_1, -1*num, 0)
+
+    f_train_0 = np.concatenate((f_train_0, f_test_0), axis=0)
+    f_train_1 = np.concatenate((f_train_1, f_test_1), axis=0)
+
+
+
     fcal = np.concatenate((f_train, f_test), axis=0)
     thetacal = np.concatenate((theta_train, theta_test), axis=0)
     sdcal = np.concatenate((sd_train, sd_test), axis=0)
+    print(f'f_train_0 {f_train_0.shape} f_train_1 {f_train_1} fcal {fcal.shape}')
+
+
+def return_usv(train_data, epsilon):
+    SS = StandardScaler(copy=True)
+    fs = SS.fit_transform(train_data)
+    epsilon = 1 - epsilon
+    u, s, vh = np.linalg.svd(fs, full_matrices=True)
+    importance = np.square(s/math.sqrt(u.shape[0] - 1))
+    cum_importance = np.cumsum(importance)/np.sum(importance)
+    pc_no = [c_id for c_id, c in enumerate(cum_importance) if c > epsilon][0]
+    S = s[0:pc_no]
+    U = u[:, 0:pc_no]
+    V = vh[0:pc_no, :]
+    fig, ax = plt.subplots()
+    ax.bar(np.arange(0,pc_no),cum_importance[0:pc_no])
+    ax.set_xlabel('PC')
+    ax.set_ylabel('Explained Variance')
+    plt.show()
+    return U, S, V, pc_no
+
+
+u0, s0, v0, pc0 = return_usv(f_train_0,0.05)
+u1, s1, v1, pc1 = return_usv(f_train_1,0.05)
+print(f'PC number for first set {pc0} second set {pc1}')
+
+# Combine these u,s,v matrices to make the U,S,V
+
+U = np.append(u0, u1, axis=1)
+S = np.diag(np.append(s0,s1))
+V = block_diag(v0,v1)
+print(f'U {U.shape} S {S.shape} V {V.shape}')
+
+
+standardpcinfo = {'U': U,
+                  'S': S,
+                  'V': V}
+####################################################
+
+
 
 
 
@@ -67,7 +138,7 @@ x_np = x_np.astype('object')
 # Note: Pick method_name = 'PCGPwM' or 'PCGPR' or 'PCSK'
 ##########################################################
 
-method_name = 'PCSK'
+method_name = 'PCGPR_with_flow'
 is_train = True
 if closure==False:
     emu_path = 'VAH_' + method_name + '.pkl' 
@@ -97,8 +168,16 @@ else:
                           theta=thetacal,
                           f=fcal.T,
                           method='PCGPR',
-                          args={'epsilon': 0.02,
+                          args={'epsilon': 0.04,
                                 'prior': prior_dict})
+    elif method_name == 'PCGPR_with_flow':
+        emu_tr = emulator(x=x_np,
+                      theta=thetacal,
+                      f=fcal.T,
+                      method='PCGPR',
+                      args={'epsilon': 0.1,
+                            'prior': prior_dict,
+                            'standardpcinfo': standardpcinfo})
     elif method_name == 'PCSK':
         emu_tr = emulator(x=x_np,
                           theta=thetacal,
