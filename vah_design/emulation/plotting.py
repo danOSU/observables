@@ -210,7 +210,7 @@ def plot_density(theta_prior, theta_post, thetanames, method):
     plt.savefig(f'{method}/density.png', dpi=200)
     return None
 
-def plot_corner_viscosity(posterior_df,prior_df, method_name, n_samples=1000, prune=1, MAP=None):
+def plot_corner_viscosity(posterior_df,prior_df, method_name, n_samples=1000, prune=1, MAP=None, closure=None):
 
     sns.set_context("notebook", font_scale=1.5)
     sns.set_style("ticks")
@@ -234,6 +234,10 @@ def plot_corner_viscosity(posterior_df,prior_df, method_name, n_samples=1000, pr
             map_parameters=MAP.flatten()
             ax.axvline(x=map_parameters[i], ls='--', c=sns.color_palette()[9], label= 'MAP')
             ax.text(0,0.9,s= f'{map_parameters[i]:.3f}', transform=ax.transAxes)
+        if closure is not None:
+            map_parameters=closure.flatten()
+            ax.axvline(x=map_parameters[i], ls='--', c=sns.color_palette()[3], label= 'Truth')
+            ax.text(0,0.7,s= f'{map_parameters[i]:.3f}', transform=ax.transAxes)        
     #ax.axvline(x=truth[i], ls='--', c=sns.color_palette()[3], label = 'Truth')
     #ax.text(0,0.8,s= f'{truth[i]:.3f}', transform=ax.transAxes)
         if n==4:
@@ -244,7 +248,7 @@ def plot_corner_viscosity(posterior_df,prior_df, method_name, n_samples=1000, pr
     return None
 
 
-def plot_corner_no_viscosity(posterior_df,prior_df,  method_name, n_samples = 1000, prune=1, MAP=None):
+def plot_corner_no_viscosity(posterior_df,prior_df,  method_name, n_samples = 1000, prune=1, MAP=None, closure=None):
 
     sns.set_context("notebook", font_scale=1.5)
     sns.set_style("ticks")
@@ -271,6 +275,10 @@ def plot_corner_no_viscosity(posterior_df,prior_df,  method_name, n_samples = 10
             map_parameters = MAP.flatten()
             ax.axvline(x=map_parameters[i], ls='--', c=sns.color_palette()[9], label='MAP')
             ax.text(0.0,1,s= f'{map_parameters[i]:.3f}',fontdict={'color':sns.color_palette()[9]}, transform=ax.transAxes)
+        if closure is not None:
+            map_parameters=closure.flatten()
+            ax.axvline(x=map_parameters[i], ls='--', c=sns.color_palette()[3], label= 'Truth')
+            ax.text(0,0.7,s= f'{map_parameters[i]:.3f}', transform=ax.transAxes)    
     #ax.axvline(x=truth[i], ls='--', c=sns.color_palette()[3], label = 'Truth')
     #ax.text(0.6,1,s= f'{truth[i]:.3f}',fontdict={'color':sns.color_palette()[3]}, transform=ax.transAxes)
         if n==0:
@@ -280,7 +288,7 @@ def plot_corner_no_viscosity(posterior_df,prior_df,  method_name, n_samples = 10
     plt.show()
     return None
    
-def plot_corner_all(posterior_df, prior_df, method_name, n_samples = 1000, prune=1, MAP=None):
+def plot_corner_all(posterior_df, prior_df, method_name, n_samples = 1000, prune=1, MAP=None, closure=None):
     sns.set_context("notebook", font_scale=1.5)
     sns.set_style("ticks")
     #map_parameters=map_values_saved.flatten()
@@ -308,6 +316,10 @@ def plot_corner_all(posterior_df, prior_df, method_name, n_samples = 1000, prune
             map_parameters = MAP.flatten()
             ax.axvline(x=map_parameters[i], ls='--', c=sns.color_palette()[9], label='MAP')
             ax.text(0.0,1,s= f'{map_parameters[i]:.3f}',fontdict={'color':sns.color_palette()[9]}, transform=ax.transAxes)
+        if closure is not None:
+            map_parameters=closure.flatten()
+            ax.axvline(x=map_parameters[i], ls='--', c=sns.color_palette()[3], label= 'Truth')
+            ax.text(0,0.7,s= f'{map_parameters[i]:.3f}', transform=ax.transAxes)    
     #ax.axvline(x=truth[i], ls='--', c=sns.color_palette()[3], label = 'Truth')
     #ax.text(0.6,1,s= f'{truth[i]:.3f}',fontdict={'color':sns.color_palette()[3]}, transform=ax.transAxes)
         if n==0:
@@ -336,17 +348,14 @@ def eta_over_s(T, T_k, alow, ahigh, etas_k):
 eta_over_s = np.vectorize(eta_over_s)
 
 
-def plot_shear(posterior_df, method_name, prior, n_samples = 1000, prune=1):
+def plot_shear(posterior_df, method_name, prior, n_samples = 1000, prune=1, MAP=None, closure=None):
 
     Tt = np.linspace(0.1, 0.4, 100)
 
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(8,6), sharex=False, sharey=False, constrained_layout=True)
     fig.suptitle("Specific shear viscosity posterior", wrap=True)
 
-# True temperature dependece of the viscosity
 
-#[T_k, alow, ahigh, etas_k] = truth[[7,8,9,10]]
-#true_shear = eta_over_s(Tt, T_k, alow, ahigh, etas_k)
 
 
     prior_etas = []
@@ -371,9 +380,19 @@ def plot_shear(posterior_df, method_name, prior, n_samples = 1000, prune=1):
     axes.fill_between(Tt, per5_pr,per95_pr,color=sns.color_palette()[7], alpha=0.1, label='90% Prior')
     axes.fill_between(Tt,per5,per95,color=sns.color_palette()[9], alpha=0.2, label='90% C.I.')
     axes.fill_between(Tt,per20,per80, color=sns.color_palette()[9], alpha=0.3, label='60% C.I.')
-#axes.plot(Tt, true_shear, color = 'r', label = 'Truth', linewidth=5)
-#pos=np.array(prior_etas).T
-#axes.violinplot(pos[1::10,:].T, positions=Tt[1::10],widths=0.03)
+
+    # Map, True temperature dependece of the viscosity
+    if closure is not None:
+        values = closure.flatten()
+        print(values)
+        [T_k, etas_k, alow, ahigh] = values[[6,7,8,9]]
+        true_shear = eta_over_s(Tt, T_k, alow, ahigh, etas_k)
+        axes.plot(Tt, true_shear, color = 'r', label = 'Truth', linewidth=5)
+    if MAP is not None:
+        values = MAP.flatten()
+        [T_k, etas_k, alow, ahigh] = values[[6,7,8,9]]
+        true_shear = eta_over_s(Tt, T_k, alow, ahigh, etas_k)
+        axes.plot(Tt, true_shear, color = 'g', label = 'MAP', linewidth=5)
 
     axes.legend(loc='upper left')
 #axes.set_ylim(0,1.2)
@@ -384,7 +403,7 @@ def plot_shear(posterior_df, method_name, prior, n_samples = 1000, prune=1):
     plt.show()
     return None
 
-def plot_bulk(posterior_df, method_name, prior, n_samples = 1000, prune=1):
+def plot_bulk(posterior_df, method_name, prior, n_samples = 1000, prune=1, MAP=None, closure=None):
     
     Tt = np.linspace(0.1, 0.4, 100)
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(8,6),
@@ -419,6 +438,17 @@ def plot_bulk(posterior_df, method_name, prior, n_samples = 1000, prune=1):
     axes.fill_between(Tt, per0_pr,per100_pr,color=sns.color_palette()[7], alpha=0.1, label='Prior')
     axes.fill_between(Tt,per5,per95,color=sns.color_palette()[4], alpha=0.2, label='90% C.I.')
     axes.fill_between(Tt,per20,per80, color=sns.color_palette()[4], alpha=0.3, label='60% C.I.')
+
+    if closure is not None:
+        values = closure.flatten()
+        [zmax, T0, width, asym] = values[[10,11,12,13]]
+        true_bulk = zeta_over_s(Tt, zmax, T0, width, asym)
+        axes.plot(Tt, true_bulk, color = 'r', label = 'Truth', linewidth=5)
+    if MAP is not None:
+        values = MAP.flatten()
+        [zmax, T0, width, asym] = values[[10,11,12,13]]
+        true_bulk = zeta_over_s(Tt, zmax, T0, width, asym)
+        axes.plot(Tt, true_bulk, color = 'g', label = 'MAP', linewidth=5)
     #axes.plot(Tt, true_bulk, color = 'r', label = 'Truth', linewidth=5)
 
     #pos=np.array(prior_zetas).T
